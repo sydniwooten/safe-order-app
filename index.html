@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/><title>Restaurant Safe Order</title>
+<style>
+:root{--black:#11130f;--muted:#6f736e;--lav:#E3DADE;--sky:#D0DBE7;--mauve:#D8959B;--sage:#829672;--evergreen:#344C3D;--pale:#F8F6F6}
+*{box-sizing:border-box}body{margin:0;background:#fff;color:var(--black);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.page-radio,.modal-toggle{position:fixed;opacity:0;pointer-events:none}
+.page{display:none;max-width:760px;margin:auto;padding:28px 16px 110px;min-height:100vh;background:#fff}
+#tabRestaurants:checked~#restaurantsPage,#tabFavorites:checked~#favoritesPage,#tabSettings:checked~#settingsPage{display:block}
+.kicker{color:var(--evergreen);font-size:12px;font-weight:850;letter-spacing:.15em;text-transform:uppercase}
+h1{font-size:34px;line-height:1.08;letter-spacing:-.035em;margin:7px 0 5px}.sub{color:var(--muted);margin:0 0 18px;line-height:1.4}
+.search{width:100%;padding:14px 15px;border:1px solid var(--lav);border-radius:15px;background:#fff;font-size:16px}
+.filters{display:flex;gap:8px;overflow:auto;padding:11px 0 16px}.chip{border:1px solid var(--lav);border-radius:999px;padding:9px 12px;font-size:12px;font-weight:800;white-space:nowrap;background:#fff}.chip.active{background:var(--evergreen);color:#fff;border-color:var(--evergreen)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{display:block;border:1px solid var(--lav);border-radius:18px;padding:15px;min-width:0;min-height:155px;background:#fff;box-shadow:0 3px 12px rgba(30,45,28,.045);overflow:hidden;cursor:pointer}
+.tile-name{font-size:19px;font-weight:900;line-height:1.12;overflow-wrap:anywhere}.tile.sage .tile-name{color:var(--sage)}.tile.evergreen .tile-name{color:var(--evergreen)}.tile.mauve .tile-name{color:var(--mauve)}.tile.sky .tile-name{color:#7890A5}
+.option-count{font-size:13px;font-weight:750;color:var(--muted);margin-top:14px}.card-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.card-badge{display:inline-block;border-radius:999px;padding:6px 8px;background:#F1F4EF;color:var(--evergreen);font-size:10px;font-weight:850;line-height:1}
+.bottom{position:fixed;z-index:40;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--lav);display:flex;justify-content:space-around;padding:10px 8px calc(10px + env(safe-area-inset-bottom))}
+.nav{color:#777;font-size:11px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:88px;cursor:pointer}.nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#tabRestaurants:checked~.bottom label[for="tabRestaurants"],#tabFavorites:checked~.bottom label[for="tabFavorites"],#tabSettings:checked~.bottom label[for="tabSettings"]{color:var(--evergreen)}
+.modal{display:none;position:fixed;inset:0;z-index:100;align-items:flex-end}.modal-toggle:checked+.modal{display:flex}.scrim{position:absolute;inset:0;background:rgba(30,35,28,.32)}
+.sheet{position:relative;background:#fff;width:100%;max-width:760px;margin:0 auto;border-radius:28px 28px 0 0;padding:22px 18px calc(30px + env(safe-area-inset-bottom));max-height:86vh;overflow:auto;box-shadow:0 -12px 40px rgba(0,0,0,.12)}
+.sheet-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.sheet h2{font-size:30px;margin:5px 0 0}.x{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#F3F5F1;color:var(--evergreen);font-size:24px;cursor:pointer}
+.overall{color:var(--muted);font-size:13px;margin:8px 0 16px}.meal{border:1px solid var(--lav);border-radius:16px;padding:14px;margin:10px 0;background:#fff}.meal-top{display:flex;justify-content:space-between;gap:10px;align-items:center}.meal-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--evergreen);font-weight:900}.macro{font-size:11px;color:var(--muted);font-weight:750}.meal-name{font-weight:900;font-size:17px;line-height:1.3;margin-top:7px}.meal-full{font-size:12px;line-height:1.45;color:var(--muted);margin-top:5px}.findings{margin-top:15px;border-top:1px solid var(--lav);padding-top:14px}.findings summary{color:var(--evergreen);font-weight:850}.findings p{color:var(--muted);font-size:13px;line-height:1.5}.verified{font-size:11px;color:var(--muted);margin-top:16px}
+.settings-card{border:1px solid var(--lav);border-radius:18px;overflow:hidden;background:#fff}.setting{padding:17px;border-bottom:1px solid var(--lav)}.setting:last-child{border-bottom:0}.setting b{display:block}.setting small{display:block;color:var(--muted);margin-top:4px}
+.pending{border:1px solid var(--lav);border-radius:16px;padding:15px;color:var(--muted);line-height:1.45;background:#fff}
+@media(min-width:620px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.tile-wrap{position:relative;min-width:0}.tile-wrap>.tile{height:100%;width:100%;padding-right:46px}
+.fav-toggle{position:fixed;opacity:0;pointer-events:none}
+.star{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font-size:24px;line-height:1;color:var(--sage);background:#fff;cursor:pointer;user-select:none}
+.restaurant-star{position:absolute;right:10px;top:10px;z-index:3;border:1px solid var(--lav)}
+.fav-toggle:checked + .tile .restaurant-star{color:var(--mauve)}
+.fav-toggle:checked + .tile .restaurant-star::before{content:"★";font-size:21px}.fav-toggle:checked + .tile .restaurant-star{font-size:0}
+.meal{position:relative}.meal-top{padding-right:38px;position:relative}.meal-star{position:absolute;right:-2px;top:-5px;border:1px solid var(--lav);font-size:21px}
+.fav-toggle:checked + .meal .meal-star{font-size:0;color:var(--mauve)}.fav-toggle:checked + .meal .meal-star::before{content:"★";font-size:19px}
+.favorite-items{display:grid;gap:12px}.favorite-item{display:block;border:1px solid var(--lav);border-radius:18px;padding:16px;background:#fff;box-shadow:0 3px 12px rgba(30,45,28,.045);cursor:pointer}
+.favorite-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.favorite-restaurant{font-size:19px;font-weight:900;color:var(--sage)}.favorite-star{color:var(--mauve);font-size:21px}.favorite-dish{font-size:15px;font-weight:850;line-height:1.35;margin-top:9px}.favorite-macros{font-size:13px;color:var(--muted);font-weight:750;margin-top:7px}
+</style>
+<style>.synced-favorite{display:none}.favorites-empty{color:var(--muted);padding:18px 2px;font-size:14px}body:has(#mealFav1:checked) .fav-for-mealFav1{display:block}body:has(#mealFav2:checked) .fav-for-mealFav2{display:block}body:has(#mealFav3:checked) .fav-for-mealFav3{display:block}body:has(#mealFav4:checked) .fav-for-mealFav4{display:block}body:has(#mealFav5:checked) .fav-for-mealFav5{display:block}body:has(#mealFav6:checked) .fav-for-mealFav6{display:block}body:has(#mealFav7:checked) .fav-for-mealFav7{display:block}body:has(#mealFav8:checked) .fav-for-mealFav8{display:block}body:has(#mealFav9:checked) .fav-for-mealFav9{display:block}body:has(#mealFav10:checked) .fav-for-mealFav10{display:block}body:has(#mealFav11:checked) .fav-for-mealFav11{display:block}body:has(#mealFav12:checked) .fav-for-mealFav12{display:block}body:has(#mealFav13:checked) .fav-for-mealFav13{display:block}body:has(#mealFav14:checked) .fav-for-mealFav14{display:block}body:has(#mealFav15:checked) .fav-for-mealFav15{display:block}body:has(#mealFav16:checked) .fav-for-mealFav16{display:block}body:has(#mealFav17:checked) .fav-for-mealFav17{display:block}body:has(#mealFav18:checked) .fav-for-mealFav18{display:block}body:has(#mealFav19:checked) .fav-for-mealFav19{display:block}body:has(#mealFav20:checked) .fav-for-mealFav20{display:block}body:has(#mealFav21:checked) .fav-for-mealFav21{display:block}body:has(#mealFav22:checked) .fav-for-mealFav22{display:block}body:has(#mealFav23:checked) .fav-for-mealFav23{display:block}body:has(#mealFav24:checked) .fav-for-mealFav24{display:block}body:has(#mealFav25:checked) .fav-for-mealFav25{display:block}body:has(#mealFav26:checked) .fav-for-mealFav26{display:block}body:has(#mealFav27:checked) .fav-for-mealFav27{display:block}body:has(#mealFav28:checked) .fav-for-mealFav28{display:block}body:has(#mealFav29:checked) .fav-for-mealFav29{display:block}body:has(#mealFav30:checked) .fav-for-mealFav30{display:block}body:has(#mealFav31:checked) .fav-for-mealFav31{display:block}body:has(#mealFav32:checked) .fav-for-mealFav32{display:block}body:has(#mealFav33:checked) .fav-for-mealFav33{display:block}body:has(#mealFav34:checked) .fav-for-mealFav34{display:block}body:has(#mealFav35:checked) .fav-for-mealFav35{display:block}body:has(#mealFav36:checked) .fav-for-mealFav36{display:block}body:has(#mealFav37:checked) .fav-for-mealFav37{display:block}body:has(#mealFav38:checked) .fav-for-mealFav38{display:block}body:has(#mealFav39:checked) .fav-for-mealFav39{display:block}body:has(#mealFav40:checked) .fav-for-mealFav40{display:block}body:has(#mealFav41:checked) .fav-for-mealFav41{display:block}body:has(#mealFav42:checked) .fav-for-mealFav42{display:block}body:has(#mealFav43:checked) .fav-for-mealFav43{display:block}body:has(#mealFav44:checked) .fav-for-mealFav44{display:block}body:has(#mealFav45:checked) .fav-for-mealFav45{display:block}body:has(#mealFav46:checked) .fav-for-mealFav46{display:block}body:has(#mealFav47:checked) .fav-for-mealFav47{display:block}body:has(#mealFav48:checked) .fav-for-mealFav48{display:block}body:has(#mealFav49:checked) .fav-for-mealFav49{display:block}body:has(#mealFav50:checked) .fav-for-mealFav50{display:block}body:has(#mealFav51:checked) .fav-for-mealFav51{display:block}body:has(#mealFav52:checked) .fav-for-mealFav52{display:block}body:has(#mealFav53:checked) .fav-for-mealFav53{display:block}body:has(#mealFav54:checked) .fav-for-mealFav54{display:block}body:has(#mealFav55:checked) .fav-for-mealFav55{display:block}body:has(#mealFav56:checked) .fav-for-mealFav56{display:block}body:has(#mealFav57:checked) .fav-for-mealFav57{display:block}body:has(#mealFav58:checked) .fav-for-mealFav58{display:block}body:has(#mealFav59:checked) .fav-for-mealFav59{display:block}body:has(#mealFav60:checked) .fav-for-mealFav60{display:block}body:has(#mealFav61:checked) .fav-for-mealFav61{display:block}body:has(#mealFav62:checked) .fav-for-mealFav62{display:block}body:has(#mealFav63:checked) .fav-for-mealFav63{display:block}body:has(#mealFav64:checked) .fav-for-mealFav64{display:block}body:has(#mealFav65:checked) .fav-for-mealFav65{display:block}body:has(#mealFav66:checked) .fav-for-mealFav66{display:block}body:has(#mealFav67:checked) .fav-for-mealFav67{display:block}body:has(#mealFav68:checked) .fav-for-mealFav68{display:block}body:has(#mealFav69:checked) .fav-for-mealFav69{display:block}body:has(#mealFav70:checked) .fav-for-mealFav70{display:block}body:has(#mealFav71:checked) .fav-for-mealFav71{display:block}body:has(#mealFav72:checked) .fav-for-mealFav72{display:block}body:has(#mealFav73:checked) .fav-for-mealFav73{display:block}body:has(#mealFav74:checked) .fav-for-mealFav74{display:block}body:has(#mealFav75:checked) .fav-for-mealFav75{display:block}body:has(#mealFav76:checked) .fav-for-mealFav76{display:block}body:has(#mealFav77:checked) .fav-for-mealFav77{display:block}body:has(#mealFav78:checked) .fav-for-mealFav78{display:block}body:has(#mealFav79:checked) .fav-for-mealFav79{display:block}body:has(#mealFav80:checked) .fav-for-mealFav80{display:block}body:has(#mealFav81:checked) .fav-for-mealFav81{display:block}body:has(#mealFav82:checked) .fav-for-mealFav82{display:block}body:has(#mealFav83:checked) .fav-for-mealFav83{display:block}body:has(#mealFav84:checked) .fav-for-mealFav84{display:block}body:has(#mealFav85:checked) .fav-for-mealFav85{display:block}body:has(#mealFav86:checked) .fav-for-mealFav86{display:block}body:has(#mealFav87:checked) .fav-for-mealFav87{display:block}body:has(#mealFav88:checked) .fav-for-mealFav88{display:block}body:has(#mealFav89:checked) .fav-for-mealFav89{display:block}body:has(#mealFav90:checked) .fav-for-mealFav90{display:block}body:has(#mealFav91:checked) .fav-for-mealFav91{display:block}body:has(#mealFav92:checked) .fav-for-mealFav92{display:block}body:has(#mealFav93:checked) .fav-for-mealFav93{display:block}body:has(#mealFav94:checked) .fav-for-mealFav94{display:block}body:has(#mealFav95:checked) .fav-for-mealFav95{display:block}body:has(#mealFav96:checked) .fav-for-mealFav96{display:block}body:has(#mealFav1:checked) .favorites-empty,body:has(#mealFav2:checked) .favorites-empty,body:has(#mealFav3:checked) .favorites-empty,body:has(#mealFav4:checked) .favorites-empty,body:has(#mealFav5:checked) .favorites-empty,body:has(#mealFav6:checked) .favorites-empty,body:has(#mealFav7:checked) .favorites-empty,body:has(#mealFav8:checked) .favorites-empty,body:has(#mealFav9:checked) .favorites-empty,body:has(#mealFav10:checked) .favorites-empty,body:has(#mealFav11:checked) .favorites-empty,body:has(#mealFav12:checked) .favorites-empty,body:has(#mealFav13:checked) .favorites-empty,body:has(#mealFav14:checked) .favorites-empty,body:has(#mealFav15:checked) .favorites-empty,body:has(#mealFav16:checked) .favorites-empty,body:has(#mealFav17:checked) .favorites-empty,body:has(#mealFav18:checked) .favorites-empty,body:has(#mealFav19:checked) .favorites-empty,body:has(#mealFav20:checked) .favorites-empty,body:has(#mealFav21:checked) .favorites-empty,body:has(#mealFav22:checked) .favorites-empty,body:has(#mealFav23:checked) .favorites-empty,body:has(#mealFav24:checked) .favorites-empty,body:has(#mealFav25:checked) .favorites-empty,body:has(#mealFav26:checked) .favorites-empty,body:has(#mealFav27:checked) .favorites-empty,body:has(#mealFav28:checked) .favorites-empty,body:has(#mealFav29:checked) .favorites-empty,body:has(#mealFav30:checked) .favorites-empty,body:has(#mealFav31:checked) .favorites-empty,body:has(#mealFav32:checked) .favorites-empty,body:has(#mealFav33:checked) .favorites-empty,body:has(#mealFav34:checked) .favorites-empty,body:has(#mealFav35:checked) .favorites-empty,body:has(#mealFav36:checked) .favorites-empty,body:has(#mealFav37:checked) .favorites-empty,body:has(#mealFav38:checked) .favorites-empty,body:has(#mealFav39:checked) .favorites-empty,body:has(#mealFav40:checked) .favorites-empty,body:has(#mealFav41:checked) .favorites-empty,body:has(#mealFav42:checked) .favorites-empty,body:has(#mealFav43:checked) .favorites-empty,body:has(#mealFav44:checked) .favorites-empty,body:has(#mealFav45:checked) .favorites-empty,body:has(#mealFav46:checked) .favorites-empty,body:has(#mealFav47:checked) .favorites-empty,body:has(#mealFav48:checked) .favorites-empty,body:has(#mealFav49:checked) .favorites-empty,body:has(#mealFav50:checked) .favorites-empty,body:has(#mealFav51:checked) .favorites-empty,body:has(#mealFav52:checked) .favorites-empty,body:has(#mealFav53:checked) .favorites-empty,body:has(#mealFav54:checked) .favorites-empty,body:has(#mealFav55:checked) .favorites-empty,body:has(#mealFav56:checked) .favorites-empty,body:has(#mealFav57:checked) .favorites-empty,body:has(#mealFav58:checked) .favorites-empty,body:has(#mealFav59:checked) .favorites-empty,body:has(#mealFav60:checked) .favorites-empty,body:has(#mealFav61:checked) .favorites-empty,body:has(#mealFav62:checked) .favorites-empty,body:has(#mealFav63:checked) .favorites-empty,body:has(#mealFav64:checked) .favorites-empty,body:has(#mealFav65:checked) .favorites-empty,body:has(#mealFav66:checked) .favorites-empty,body:has(#mealFav67:checked) .favorites-empty,body:has(#mealFav68:checked) .favorites-empty,body:has(#mealFav69:checked) .favorites-empty,body:has(#mealFav70:checked) .favorites-empty,body:has(#mealFav71:checked) .favorites-empty,body:has(#mealFav72:checked) .favorites-empty,body:has(#mealFav73:checked) .favorites-empty,body:has(#mealFav74:checked) .favorites-empty,body:has(#mealFav75:checked) .favorites-empty,body:has(#mealFav76:checked) .favorites-empty,body:has(#mealFav77:checked) .favorites-empty,body:has(#mealFav78:checked) .favorites-empty,body:has(#mealFav79:checked) .favorites-empty,body:has(#mealFav80:checked) .favorites-empty,body:has(#mealFav81:checked) .favorites-empty,body:has(#mealFav82:checked) .favorites-empty,body:has(#mealFav83:checked) .favorites-empty,body:has(#mealFav84:checked) .favorites-empty,body:has(#mealFav85:checked) .favorites-empty,body:has(#mealFav86:checked) .favorites-empty,body:has(#mealFav87:checked) .favorites-empty,body:has(#mealFav88:checked) .favorites-empty,body:has(#mealFav89:checked) .favorites-empty,body:has(#mealFav90:checked) .favorites-empty,body:has(#mealFav91:checked) .favorites-empty,body:has(#mealFav92:checked) .favorites-empty,body:has(#mealFav93:checked) .favorites-empty,body:has(#mealFav94:checked) .favorites-empty,body:has(#mealFav95:checked) .favorites-empty,body:has(#mealFav96:checked) .favorites-empty{display:none}</style><style>
+.favorite-count{display:none;align-items:center;gap:5px;margin-top:10px;font-size:10px;font-weight:850;color:var(--mauve)}
+.count-icons{display:flex;gap:1px;letter-spacing:-1px}.fav-unit{display:none;font-size:11px}.fav-count-label{color:var(--muted)}
+body:has(#mealFav1:checked) .count-modal-0{display:flex}body:has(#mealFav1:checked) .fav-unit-mealFav1{display:inline}body:has(#mealFav2:checked) .count-modal-0{display:flex}body:has(#mealFav2:checked) .fav-unit-mealFav2{display:inline}body:has(#mealFav3:checked) .count-modal-0{display:flex}body:has(#mealFav3:checked) .fav-unit-mealFav3{display:inline}body:has(#mealFav4:checked) .count-modal-0{display:flex}body:has(#mealFav4:checked) .fav-unit-mealFav4{display:inline}body:has(#mealFav5:checked) .count-modal-0{display:flex}body:has(#mealFav5:checked) .fav-unit-mealFav5{display:inline}body:has(#mealFav6:checked) .count-modal-1{display:flex}body:has(#mealFav6:checked) .fav-unit-mealFav6{display:inline}body:has(#mealFav7:checked) .count-modal-1{display:flex}body:has(#mealFav7:checked) .fav-unit-mealFav7{display:inline}body:has(#mealFav8:checked) .count-modal-1{display:flex}body:has(#mealFav8:checked) .fav-unit-mealFav8{display:inline}body:has(#mealFav9:checked) .count-modal-1{display:flex}body:has(#mealFav9:checked) .fav-unit-mealFav9{display:inline}body:has(#mealFav10:checked) .count-modal-2{display:flex}body:has(#mealFav10:checked) .fav-unit-mealFav10{display:inline}body:has(#mealFav11:checked) .count-modal-2{display:flex}body:has(#mealFav11:checked) .fav-unit-mealFav11{display:inline}body:has(#mealFav12:checked) .count-modal-2{display:flex}body:has(#mealFav12:checked) .fav-unit-mealFav12{display:inline}body:has(#mealFav13:checked) .count-modal-2{display:flex}body:has(#mealFav13:checked) .fav-unit-mealFav13{display:inline}body:has(#mealFav14:checked) .count-modal-2{display:flex}body:has(#mealFav14:checked) .fav-unit-mealFav14{display:inline}body:has(#mealFav15:checked) .count-modal-3{display:flex}body:has(#mealFav15:checked) .fav-unit-mealFav15{display:inline}body:has(#mealFav16:checked) .count-modal-3{display:flex}body:has(#mealFav16:checked) .fav-unit-mealFav16{display:inline}body:has(#mealFav17:checked) .count-modal-3{display:flex}body:has(#mealFav17:checked) .fav-unit-mealFav17{display:inline}body:has(#mealFav18:checked) .count-modal-3{display:flex}body:has(#mealFav18:checked) .fav-unit-mealFav18{display:inline}body:has(#mealFav19:checked) .count-modal-4{display:flex}body:has(#mealFav19:checked) .fav-unit-mealFav19{display:inline}body:has(#mealFav20:checked) .count-modal-4{display:flex}body:has(#mealFav20:checked) .fav-unit-mealFav20{display:inline}body:has(#mealFav21:checked) .count-modal-4{display:flex}body:has(#mealFav21:checked) .fav-unit-mealFav21{display:inline}body:has(#mealFav22:checked) .count-modal-4{display:flex}body:has(#mealFav22:checked) .fav-unit-mealFav22{display:inline}body:has(#mealFav23:checked) .count-modal-5{display:flex}body:has(#mealFav23:checked) .fav-unit-mealFav23{display:inline}body:has(#mealFav24:checked) .count-modal-5{display:flex}body:has(#mealFav24:checked) .fav-unit-mealFav24{display:inline}body:has(#mealFav25:checked) .count-modal-5{display:flex}body:has(#mealFav25:checked) .fav-unit-mealFav25{display:inline}body:has(#mealFav26:checked) .count-modal-5{display:flex}body:has(#mealFav26:checked) .fav-unit-mealFav26{display:inline}body:has(#mealFav27:checked) .count-modal-5{display:flex}body:has(#mealFav27:checked) .fav-unit-mealFav27{display:inline}body:has(#mealFav28:checked) .count-modal-6{display:flex}body:has(#mealFav28:checked) .fav-unit-mealFav28{display:inline}body:has(#mealFav29:checked) .count-modal-6{display:flex}body:has(#mealFav29:checked) .fav-unit-mealFav29{display:inline}body:has(#mealFav30:checked) .count-modal-6{display:flex}body:has(#mealFav30:checked) .fav-unit-mealFav30{display:inline}body:has(#mealFav31:checked) .count-modal-6{display:flex}body:has(#mealFav31:checked) .fav-unit-mealFav31{display:inline}body:has(#mealFav32:checked) .count-modal-6{display:flex}body:has(#mealFav32:checked) .fav-unit-mealFav32{display:inline}body:has(#mealFav33:checked) .count-modal-7{display:flex}body:has(#mealFav33:checked) .fav-unit-mealFav33{display:inline}body:has(#mealFav34:checked) .count-modal-7{display:flex}body:has(#mealFav34:checked) .fav-unit-mealFav34{display:inline}body:has(#mealFav35:checked) .count-modal-7{display:flex}body:has(#mealFav35:checked) .fav-unit-mealFav35{display:inline}body:has(#mealFav36:checked) .count-modal-8{display:flex}body:has(#mealFav36:checked) .fav-unit-mealFav36{display:inline}body:has(#mealFav37:checked) .count-modal-8{display:flex}body:has(#mealFav37:checked) .fav-unit-mealFav37{display:inline}body:has(#mealFav38:checked) .count-modal-8{display:flex}body:has(#mealFav38:checked) .fav-unit-mealFav38{display:inline}body:has(#mealFav39:checked) .count-modal-8{display:flex}body:has(#mealFav39:checked) .fav-unit-mealFav39{display:inline}body:has(#mealFav40:checked) .count-modal-8{display:flex}body:has(#mealFav40:checked) .fav-unit-mealFav40{display:inline}body:has(#mealFav41:checked) .count-modal-9{display:flex}body:has(#mealFav41:checked) .fav-unit-mealFav41{display:inline}body:has(#mealFav42:checked) .count-modal-9{display:flex}body:has(#mealFav42:checked) .fav-unit-mealFav42{display:inline}body:has(#mealFav43:checked) .count-modal-9{display:flex}body:has(#mealFav43:checked) .fav-unit-mealFav43{display:inline}body:has(#mealFav44:checked) .count-modal-10{display:flex}body:has(#mealFav44:checked) .fav-unit-mealFav44{display:inline}body:has(#mealFav45:checked) .count-modal-10{display:flex}body:has(#mealFav45:checked) .fav-unit-mealFav45{display:inline}body:has(#mealFav46:checked) .count-modal-10{display:flex}body:has(#mealFav46:checked) .fav-unit-mealFav46{display:inline}body:has(#mealFav47:checked) .count-modal-11{display:flex}body:has(#mealFav47:checked) .fav-unit-mealFav47{display:inline}body:has(#mealFav48:checked) .count-modal-11{display:flex}body:has(#mealFav48:checked) .fav-unit-mealFav48{display:inline}body:has(#mealFav49:checked) .count-modal-12{display:flex}body:has(#mealFav49:checked) .fav-unit-mealFav49{display:inline}body:has(#mealFav50:checked) .count-modal-12{display:flex}body:has(#mealFav50:checked) .fav-unit-mealFav50{display:inline}body:has(#mealFav51:checked) .count-modal-12{display:flex}body:has(#mealFav51:checked) .fav-unit-mealFav51{display:inline}body:has(#mealFav52:checked) .count-modal-12{display:flex}body:has(#mealFav52:checked) .fav-unit-mealFav52{display:inline}body:has(#mealFav53:checked) .count-modal-12{display:flex}body:has(#mealFav53:checked) .fav-unit-mealFav53{display:inline}body:has(#mealFav54:checked) .count-modal-13{display:flex}body:has(#mealFav54:checked) .fav-unit-mealFav54{display:inline}body:has(#mealFav55:checked) .count-modal-13{display:flex}body:has(#mealFav55:checked) .fav-unit-mealFav55{display:inline}body:has(#mealFav56:checked) .count-modal-13{display:flex}body:has(#mealFav56:checked) .fav-unit-mealFav56{display:inline}body:has(#mealFav57:checked) .count-modal-13{display:flex}body:has(#mealFav57:checked) .fav-unit-mealFav57{display:inline}body:has(#mealFav58:checked) .count-modal-14{display:flex}body:has(#mealFav58:checked) .fav-unit-mealFav58{display:inline}body:has(#mealFav59:checked) .count-modal-14{display:flex}body:has(#mealFav59:checked) .fav-unit-mealFav59{display:inline}body:has(#mealFav60:checked) .count-modal-14{display:flex}body:has(#mealFav60:checked) .fav-unit-mealFav60{display:inline}body:has(#mealFav61:checked) .count-modal-14{display:flex}body:has(#mealFav61:checked) .fav-unit-mealFav61{display:inline}body:has(#mealFav62:checked) .count-modal-14{display:flex}body:has(#mealFav62:checked) .fav-unit-mealFav62{display:inline}body:has(#mealFav63:checked) .count-modal-15{display:flex}body:has(#mealFav63:checked) .fav-unit-mealFav63{display:inline}body:has(#mealFav64:checked) .count-modal-15{display:flex}body:has(#mealFav64:checked) .fav-unit-mealFav64{display:inline}body:has(#mealFav65:checked) .count-modal-15{display:flex}body:has(#mealFav65:checked) .fav-unit-mealFav65{display:inline}body:has(#mealFav66:checked) .count-modal-15{display:flex}body:has(#mealFav66:checked) .fav-unit-mealFav66{display:inline}body:has(#mealFav67:checked) .count-modal-15{display:flex}body:has(#mealFav67:checked) .fav-unit-mealFav67{display:inline}body:has(#mealFav68:checked) .count-modal-16{display:flex}body:has(#mealFav68:checked) .fav-unit-mealFav68{display:inline}body:has(#mealFav69:checked) .count-modal-16{display:flex}body:has(#mealFav69:checked) .fav-unit-mealFav69{display:inline}body:has(#mealFav70:checked) .count-modal-16{display:flex}body:has(#mealFav70:checked) .fav-unit-mealFav70{display:inline}body:has(#mealFav71:checked) .count-modal-16{display:flex}body:has(#mealFav71:checked) .fav-unit-mealFav71{display:inline}body:has(#mealFav72:checked) .count-modal-16{display:flex}body:has(#mealFav72:checked) .fav-unit-mealFav72{display:inline}body:has(#mealFav73:checked) .count-modal-17{display:flex}body:has(#mealFav73:checked) .fav-unit-mealFav73{display:inline}body:has(#mealFav74:checked) .count-modal-17{display:flex}body:has(#mealFav74:checked) .fav-unit-mealFav74{display:inline}body:has(#mealFav75:checked) .count-modal-17{display:flex}body:has(#mealFav75:checked) .fav-unit-mealFav75{display:inline}body:has(#mealFav76:checked) .count-modal-18{display:flex}body:has(#mealFav76:checked) .fav-unit-mealFav76{display:inline}body:has(#mealFav77:checked) .count-modal-18{display:flex}body:has(#mealFav77:checked) .fav-unit-mealFav77{display:inline}body:has(#mealFav78:checked) .count-modal-18{display:flex}body:has(#mealFav78:checked) .fav-unit-mealFav78{display:inline}body:has(#mealFav79:checked) .count-modal-18{display:flex}body:has(#mealFav79:checked) .fav-unit-mealFav79{display:inline}body:has(#mealFav80:checked) .count-modal-19{display:flex}body:has(#mealFav80:checked) .fav-unit-mealFav80{display:inline}body:has(#mealFav81:checked) .count-modal-19{display:flex}body:has(#mealFav81:checked) .fav-unit-mealFav81{display:inline}body:has(#mealFav82:checked) .count-modal-19{display:flex}body:has(#mealFav82:checked) .fav-unit-mealFav82{display:inline}body:has(#mealFav83:checked) .count-modal-19{display:flex}body:has(#mealFav83:checked) .fav-unit-mealFav83{display:inline}body:has(#mealFav84:checked) .count-modal-19{display:flex}body:has(#mealFav84:checked) .fav-unit-mealFav84{display:inline}body:has(#mealFav85:checked) .count-modal-20{display:flex}body:has(#mealFav85:checked) .fav-unit-mealFav85{display:inline}body:has(#mealFav86:checked) .count-modal-20{display:flex}body:has(#mealFav86:checked) .fav-unit-mealFav86{display:inline}body:has(#mealFav87:checked) .count-modal-21{display:flex}body:has(#mealFav87:checked) .fav-unit-mealFav87{display:inline}body:has(#mealFav88:checked) .count-modal-21{display:flex}body:has(#mealFav88:checked) .fav-unit-mealFav88{display:inline}body:has(#mealFav89:checked) .count-modal-21{display:flex}body:has(#mealFav89:checked) .fav-unit-mealFav89{display:inline}body:has(#mealFav90:checked) .count-modal-21{display:flex}body:has(#mealFav90:checked) .fav-unit-mealFav90{display:inline}body:has(#mealFav91:checked) .count-modal-21{display:flex}body:has(#mealFav91:checked) .fav-unit-mealFav91{display:inline}body:has(#mealFav92:checked) .count-modal-22{display:flex}body:has(#mealFav92:checked) .fav-unit-mealFav92{display:inline}body:has(#mealFav93:checked) .count-modal-22{display:flex}body:has(#mealFav93:checked) .fav-unit-mealFav93{display:inline}body:has(#mealFav94:checked) .count-modal-22{display:flex}body:has(#mealFav94:checked) .fav-unit-mealFav94{display:inline}body:has(#mealFav95:checked) .count-modal-22{display:flex}body:has(#mealFav95:checked) .fav-unit-mealFav95{display:inline}body:has(#mealFav96:checked) .count-modal-22{display:flex}body:has(#mealFav96:checked) .fav-unit-mealFav96{display:inline}</style>
+<style>
+/* v17 — frozen restaurant header in meal-option sheets */
+.sheet{
+  padding-top:0 !important;
+}
+.sheet-head{
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:#fff;
+  margin:0 -18px;
+  padding:20px 18px 12px;
+  border-bottom:1px solid rgba(227,218,222,.72);
+}
+
+/* Keep the close control anchored and easy to hit while scrolling. */
+.sheet-head .x{
+  flex:0 0 auto;
+  position:sticky;
+  top:18px;
+}
+
+/* The status/context line belongs with the restaurant heading visually,
+   but remains directly below the frozen bar so meal cards can scroll under it. */
+.sheet > .overall{
+  margin-top:14px;
+}
+
+/* Prevent scrolled content from visually bleeding through the sticky header. */
+.sheet-head::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-8px;
+  height:8px;
+  background:linear-gradient(to bottom,rgba(255,255,255,.96),rgba(255,255,255,0));
+  pointer-events:none;
+}
+</style>
+<style>
+/* v18 — functional restaurant filters, CSS-only */
+.filter-radio{position:fixed;opacity:0;pointer-events:none}
+
+/* All cards visible by default / All */
+#filterAll:checked ~ #restaurantsPage .restaurant-card{display:block}
+
+/* Category filters */
+#filterBest:checked ~ #restaurantsPage .restaurant-card:not(.),
+#filterProtein:checked ~ #restaurantsPage .restaurant-card:not(.filter-protein),
+#filterCalorie:checked ~ #restaurantsPage .restaurant-card:not(.filter-calorie),
+#filterCertain:checked ~ #restaurantsPage .restaurant-card:not(.filter-certain){display:none}
+
+/* Active chip */
+#filterAll:checked ~ #restaurantsPage label[for="filterAll"],
+#filterBest:checked ~ #restaurantsPage label[for="filterBest"],
+#filterProtein:checked ~ #restaurantsPage label[for="filterProtein"],
+#filterCalorie:checked ~ #restaurantsPage label[for="filterCalorie"],
+#filterCertain:checked ~ #restaurantsPage label[for="filterCertain"]{
+  background:var(--evergreen);
+  color:#fff;
+  border-color:var(--evergreen);
+}
+</style>
+<style>
+/* v19 — stable viewport navigation */
+html,body{
+  width:100%;
+  height:100%;
+  min-height:100%;
+  overflow:hidden;
+  overscroll-behavior:none;
+}
+body{
+  position:fixed;
+  inset:0;
+}
+.page{
+  position:absolute;
+  inset:0;
+  width:100%;
+  max-width:none;
+  height:100%;
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  padding-bottom:calc(105px + env(safe-area-inset-bottom)) !important;
+}
+.page > *{
+  max-width:728px;
+  margin-left:auto;
+  margin-right:auto;
+}
+.bottom{
+  position:absolute !important;
+  left:0;
+  right:0;
+  bottom:0;
+  transform:translateZ(0);
+  -webkit-transform:translateZ(0);
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom));
+}
+.modal{
+  position:absolute;
+}
+</style>
+<style>
+/* v20 — repaired CSS-only restaurant filtering */
+body:has(#filterBest:checked) #restaurantsPage .restaurant-card,
+body:has(#filterProtein:checked) #restaurantsPage .restaurant-card,
+body:has(#filterCalorie:checked) #restaurantsPage .restaurant-card,
+body:has(#filterCertain:checked) #restaurantsPage .restaurant-card{
+  display:none !important;
+}
+body:has(#filterBest:checked) #restaurantsPage .restaurant-card.filter-best,
+body:has(#filterProtein:checked) #restaurantsPage .restaurant-card.filter-protein,
+body:has(#filterCalorie:checked) #restaurantsPage .restaurant-card.filter-calorie,
+body:has(#filterCertain:checked) #restaurantsPage .restaurant-card.filter-certain{
+  display:block !important;
+}
+body:has(#filterAll:checked) #restaurantsPage .restaurant-card{
+  display:block !important;
+}
+
+/* Active filter chip follows the same radio state */
+#restaurantsPage .chip{background:#fff;color:var(--black);border-color:var(--lav)}
+body:has(#filterAll:checked) #restaurantsPage label[for="filterAll"],
+body:has(#filterBest:checked) #restaurantsPage label[for="filterBest"],
+body:has(#filterProtein:checked) #restaurantsPage label[for="filterProtein"],
+body:has(#filterCalorie:checked) #restaurantsPage label[for="filterCalorie"],
+body:has(#filterCertain:checked) #restaurantsPage label[for="filterCertain"]{
+  background:var(--evergreen) !important;
+  color:#fff !important;
+  border-color:var(--evergreen) !important;
+}
+</style>
+<style>body:has(#mealFav97:checked) .fav-for-mealFav97{display:block}body:has(#mealFav97:checked) .favorites-empty{display:none}body:has(#mealFav97:checked) .count-modal-23{display:flex}body:has(#mealFav97:checked) .fav-unit-mealFav97{display:inline}body:has(#mealFav98:checked) .fav-for-mealFav98{display:block}body:has(#mealFav98:checked) .favorites-empty{display:none}body:has(#mealFav98:checked) .count-modal-23{display:flex}body:has(#mealFav98:checked) .fav-unit-mealFav98{display:inline}body:has(#mealFav99:checked) .fav-for-mealFav99{display:block}body:has(#mealFav99:checked) .favorites-empty{display:none}body:has(#mealFav99:checked) .count-modal-23{display:flex}body:has(#mealFav99:checked) .fav-unit-mealFav99{display:inline}body:has(#mealFav100:checked) .fav-for-mealFav100{display:block}body:has(#mealFav100:checked) .favorites-empty{display:none}body:has(#mealFav100:checked) .count-modal-23{display:flex}body:has(#mealFav100:checked) .fav-unit-mealFav100{display:inline}body:has(#mealFav101:checked) .fav-for-mealFav101{display:block}body:has(#mealFav101:checked) .favorites-empty{display:none}body:has(#mealFav101:checked) .count-modal-23{display:flex}body:has(#mealFav101:checked) .fav-unit-mealFav101{display:inline}</style>
+<style>
+/* v23 — visible restaurant search text + clear control */
+#restaurantSearch{
+  color:#111 !important;
+  -webkit-text-fill-color:#111 !important;
+  caret-color:#344C3D !important;
+  background:#fff !important;
+  opacity:1 !important;
+  padding-right:52px !important;
+}
+#restaurantSearch::placeholder{
+  color:#b7b7b2 !important;
+  -webkit-text-fill-color:#b7b7b2 !important;
+  opacity:1 !important;
+}
+/* Make Safari's built-in clear-search X visible on the white field */
+#restaurantSearch::-webkit-search-cancel-button{
+  -webkit-appearance:auto !important;
+  appearance:auto !important;
+  opacity:1 !important;
+  cursor:pointer;
+}
+</style>
+<style>
+/* v24 — custom clear-search button, because embedded Safari enjoys hiding the native one */
+.search-wrap{
+  position:relative;
+  width:100%;
+}
+.search-wrap #restaurantSearch{
+  width:100%;
+  padding-right:56px !important;
+}
+#restaurantSearch::-webkit-search-cancel-button{
+  -webkit-appearance:none !important;
+  appearance:none !important;
+  display:none !important;
+}
+.search-clear{
+  position:absolute;
+  right:15px;
+  top:50%;
+  transform:translateY(-50%);
+  width:34px;
+  height:34px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:#f1f4ef;
+  color:#344C3D;
+  font:500 27px/32px Arial,sans-serif;
+  text-align:center;
+  cursor:pointer;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:5;
+  -webkit-tap-highlight-color:transparent;
+}
+.search-wrap:has(#restaurantSearch:not(:placeholder-shown)) .search-clear{
+  display:flex;
+}
+.search-clear:active{
+  background:#e3e9df;
+}
+</style>
+<style>
+/* v25 — restaurant title colors now encode restaurant type */
+.restaurant-card.category-quick .tile-name{color:#D8959B !important;}       /* Mauve: Quick Service / Drive-Thru */
+.restaurant-card.category-sit .tile-name{color:#829672 !important;}         /* Sage: Sit-Down / Casual Dining */
+.restaurant-card.category-specialty .tile-name{color:#7F9DB4 !important;}   /* Sky: Specialty / Café / Smoothie / Fast-Casual */
+</style>
+<style>
+.pending-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.research-action,.import-action{border:0;border-radius:999px;padding:8px 11px;font-weight:850;font-size:11px;cursor:pointer}
+.research-action{background:#344C3D;color:#fff}.import-action{background:#F1F4EF;color:#344C3D}
+.research-panel{display:none;position:fixed;inset:0;z-index:1400;background:rgba(0,0,0,.30);align-items:flex-end;justify-content:center}
+.research-panel.open{display:flex}.research-sheet{background:#fff;width:min(100%,760px);max-height:88vh;overflow:auto;border-radius:28px 28px 0 0;padding:22px}
+.research-sheet-head{position:sticky;top:-22px;background:#fff;z-index:3;display:flex;justify-content:space-between;align-items:center;padding:18px 0 12px}
+.research-sheet h2{margin:0;font-size:28px}.research-close{border:0;background:#f1f4ef;color:#344C3D;width:40px;height:40px;border-radius:50%;font-size:26px}
+.research-prompt{white-space:pre-wrap;background:#F8F6F6;border:1px solid #E3DADE;border-radius:16px;padding:14px;font-size:12px;line-height:1.45;max-height:44vh;overflow:auto}
+.copy-prompt{width:100%;border:0;border-radius:13px;background:#344C3D;color:#fff;padding:13px;font-weight:850;margin:12px 0}
+.import-area{width:100%;min-height:160px;border:1px solid #D8D8D8;border-radius:14px;padding:12px;color:#111;background:#fff;font-size:14px}
+.import-note{font-size:12px;color:#6f736e;line-height:1.45}
+</style>
+<style>
+/* v28 fixes */
+.filters,.filter-row,.chips,.filter-chips{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  overflow-x:visible !important;
+  overflow-y:visible !important;
+  white-space:normal !important;
+  width:100% !important;
+  gap:8px !important;
+}
+.filters > *, .filter-row > *, .chips > *, .filter-chips > *{
+  flex:0 0 auto !important;
+}
+#copyResearchPrompt{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+</style>
+<style>body:has(#mealFav102:checked) .fav-for-mealFav102{display:block}body:has(#mealFav102:checked) .count-modal-6{display:flex}body:has(#mealFav102:checked) .fav-unit-mealFav102{display:inline}body:has(#mealFav103:checked) .fav-for-mealFav103{display:block}body:has(#mealFav103:checked) .count-modal-6{display:flex}body:has(#mealFav103:checked) .fav-unit-mealFav103{display:inline}</style>
+<style id="crayon-sticker-theme">
+:root{--black:#203c2d;--muted:#5c665d;--lav:#dfb5ed;--sky:#a9d9ff;--mauve:#ff90b2;--sage:#7ed2a0;--evergreen:#245b42;--pale:#fff9ec}
+body{background:#fff5e8;color:#173d2d}
+.page{background-color:#fff8eb;background-image:radial-gradient(#f6dfc8 0.6px,transparent .7px),radial-gradient(#fce9d7 .7px,transparent .8px);background-size:13px 13px,21px 21px;background-position:0 0,5px 9px}
+.kicker{color:#235b43;letter-spacing:.14em;font-weight:950}
+h1{font-family:ui-rounded,"Arial Rounded MT Bold", "Trebuchet MS",sans-serif;font-weight:1000;letter-spacing:-.035em;color:#ee648d;text-shadow:1px 2px 0 #fff,2px 3px 0 #f4d0ac}
+#restaurantsPage h1::after{content:' ✿';color:#75c0ed;font-size:.7em}
+#restaurantsPage .kicker::after{content:'   ✦  ✿';color:#f3ad2e;font-size:16px;letter-spacing:4px}
+.sub{color:#486052}
+.search,.search-wrap input{background:#fffdf8!important;border:2px solid #f3a6bf!important;border-radius:24px!important;box-shadow:2px 3px 0 #f9dfba!important}
+.filters{gap:9px!important;padding:15px 0 17px!important}
+.chip{border:1.5px solid #2b4e3a!important;box-shadow:1px 2px 0 rgba(39,64,44,.12);font-weight:900;color:#203b2d}
+.filters label:nth-child(5n+1),.filters .chip:nth-child(5n+1){background:#b6dfbb}
+.filters label:nth-child(5n+2),.filters .chip:nth-child(5n+2){background:#ffbfd3}
+.filters label:nth-child(5n+3),.filters .chip:nth-child(5n+3){background:#ffe38a}
+.filters label:nth-child(5n+4),.filters .chip:nth-child(5n+4){background:#b4dafa}
+.filters label:nth-child(5n+5),.filters .chip:nth-child(5n+5){background:#e1b9f5}
+.chip.active,.chip:has(input:checked){background:#235b43!important;color:white!important}
+.manage-restaurants-btn{border:2px solid #285d44!important;background:#e1f0c9!important;color:#20543b!important;box-shadow:2px 3px 0 #f4d4aa;font-size:14px}
+.grid{gap:12px}
+.tile{border:2px solid #f4bbad;background:#fff8e9;border-radius:22px;box-shadow:2px 4px 0 #f4e1c5;min-height:157px}
+.restaurant-card:nth-child(4n+1){background:#fff4e4;border-color:#f2c15b}
+.restaurant-card:nth-child(4n+2){background:#fff1e8;border-color:#9bd4a4}
+.restaurant-card:nth-child(4n+3){background:#fff0f3;border-color:#f4b4c4}
+.restaurant-card:nth-child(4n+4){background:#eef6ff;border-color:#9cccf3}
+.restaurant-card .tile-name{font-family:ui-rounded,"Arial Rounded MT Bold","Trebuchet MS",sans-serif;font-weight:1000}
+.restaurant-card.category-quick .tile-name{color:#f04d7c!important}
+.restaurant-card.category-sit .tile-name{color:#367c48!important}
+.restaurant-card.category-specialty .tile-name{color:#2479bf!important}
+.restaurant-card .tile-name::before{content:'✿ ';font-size:13px;color:#f4b63b}
+.card-badge{background:#dcefd5;border:1px solid #c2dcb6;color:#285d43}
+.bottom{background:#fff1e5;border-top:2px solid #efc4c7;box-shadow:0 -4px 16px #f7d7b780}
+.nav{color:#375441;font-weight:900}.nav svg{stroke-width:2.1}
+#tabRestaurants:checked~.bottom label[for="tabRestaurants"],#tabFavorites:checked~.bottom label[for="tabFavorites"],#tabSettings:checked~.bottom label[for="tabSettings"]{color:#ec4382}
+.sheet,.manage-sheet,.research-sheet{background:#fff8eb!important;background-image:radial-gradient(#f6dfc8 .6px,transparent .7px)!important;background-size:14px 14px!important;border:2px solid #f2bdc8;box-shadow:0 -10px 0 #ffbfd3,0 -14px 30px #0002}
+.sheet h2,.manage-head h2,.research-sheet h2{font-family:ui-rounded,"Arial Rounded MT Bold","Trebuchet MS",sans-serif;color:#e84c84;font-weight:1000}
+.sheet-head,.manage-head,.research-sheet-head{background:#fff8eb!important}
+.meal,.favorite-item,.settings-card,.pending{background:#fffdf5;border:2px solid #edc9a8;border-radius:19px;box-shadow:2px 3px 0 #f2ddbd}
+.meal:nth-of-type(3n+1){border-color:#f5b5c5;background:#fff5f6}
+.meal:nth-of-type(3n+2){border-color:#b4d3ee;background:#f4f9ff}
+.meal:nth-of-type(3n+3){border-color:#b7dbb3;background:#f7fff3}
+.research-action,.add-confirm,.copy-prompt{background:#285c43!important;border:2px solid #1c4431!important;border-radius:17px!important;color:#fff!important}
+#saveImportedProfile{background:#fa4c92!important;border-color:#c83270!important}
+.research-prompt,.import-area{background:#fffdfa!important;border:2px solid #f1c8d0!important;border-radius:18px!important}
+.manage-close,.research-close,.x{background:#ffc4d4!important;color:#244f3a!important}
+.add-box{background:#fff4ee;border:2px solid #f1bdcc}
+</style>
+<style>@media(max-width:700px){html{font-size:14px}.restaurant-card{padding:12px!important}.tile-name{font-size:15px!important}.grid{gap:10px!important}.filters{gap:6px!important}.manage-restaurants-btn{padding:10px 14px!important;font-size:13px!important}}</style></head><body>
+<input checked="" class="page-radio" id="tabRestaurants" name="tabs" type="radio"/>
+<input class="page-radio" id="tabFavorites" name="tabs" type="radio"/>
+<input class="page-radio" id="tabSettings" name="tabs" type="radio"/>
+<input checked="" class="filter-radio" id="filterAll" name="restaurantFilter" type="radio"/>
+<input class="filter-radio" id="filterBest" name="restaurantFilter" type="radio"/>
+<input class="filter-radio" id="filterProtein" name="restaurantFilter" type="radio"/>
+<input class="filter-radio" id="filterCalorie" name="restaurantFilter" type="radio"/>
+<input class="filter-radio" id="filterCertain" name="restaurantFilter" type="radio"/>
+<main class="page" id="restaurantsPage"><div class="kicker">Restaurant Safe Order</div><h1>Where do you want to eat?</h1><p class="sub">Choose a restaurant to see all of your best meal options.</p>
+<div class="search-wrap">
+<input aria-label="Search restaurants" autocomplete="off" class="search" id="restaurantSearch" placeholder="Search 25 restaurants…" type="search"/>
+<button aria-label="Clear search" class="search-clear" id="restaurantSearchClear" type="button">×</button>
+</div>
+<div class="filters"><label class="chip" for="filterAll">All</label><label class="chip" for="filterBest">Best Options</label><label class="chip" for="filterProtein">High Protein</label><label class="chip" for="filterCalorie">Lower Calorie</label><label class="chip" for="filterCertain">Lowest Uncertainty</label></div>
+<div class="grid"><label class="restaurant-card tile category-quick" for="tacoToggle"><div class="tile-name">Taco Bell</div><div class="option-count">Research pending</div><div class="card-badges"><span class="card-badge">Profile pending</span></div></label><label class="filter-best restaurant-card filter-protein filter-certain tile restaurant-0 category-sit" for="modalToggle0"><div class="tile-name">BJ’s</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">Best Options</span><span class="card-badge">High Protein</span></div>
+<div class="favorite-count count-modal-0"><span class="count-icons"><span class="fav-unit fav-unit-mealFav1">★</span><span class="fav-unit fav-unit-mealFav2">★</span><span class="fav-unit fav-unit-mealFav3">★</span><span class="fav-unit fav-unit-mealFav4">★</span><span class="fav-unit fav-unit-mealFav5">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-protein tile restaurant-23 category-sit" for="modalToggle23"><div class="tile-name">Bobby-Q BBQ Restaurant</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">High Protein</span></div>
+<div class="favorite-count count-modal-23"><span class="count-icons"><span class="fav-unit fav-unit-mealFav97">★</span><span class="fav-unit fav-unit-mealFav98">★</span><span class="fav-unit fav-unit-mealFav99">★</span><span class="fav-unit fav-unit-mealFav100">★</span><span class="fav-unit fav-unit-mealFav101">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-calorie tile restaurant-1 category-quick" for="modalToggle1"><div class="tile-name">Burger King</div>
+<div class="option-count">4 meal options</div>
+<div class="card-badges"><span class="card-badge">Lower Calorie</span></div>
+<div class="favorite-count count-modal-1"><span class="count-icons"><span class="fav-unit fav-unit-mealFav6">★</span><span class="fav-unit fav-unit-mealFav7">★</span><span class="fav-unit fav-unit-mealFav8">★</span><span class="fav-unit fav-unit-mealFav9">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-calorie tile restaurant-2 category-specialty" for="modalToggle2"><div class="tile-name">Café Zupas</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">Lower Calorie</span></div>
+<div class="favorite-count count-modal-2"><span class="count-icons"><span class="fav-unit fav-unit-mealFav10">★</span><span class="fav-unit fav-unit-mealFav11">★</span><span class="fav-unit fav-unit-mealFav12">★</span><span class="fav-unit fav-unit-mealFav13">★</span><span class="fav-unit fav-unit-mealFav14">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-calorie tile restaurant-3 category-quick" for="modalToggle3"><div class="tile-name">Carl’s Jr.</div>
+<div class="option-count">4 meal options</div>
+<div class="card-badges"><span class="card-badge">Lower Calorie</span></div>
+<div class="favorite-count count-modal-3"><span class="count-icons"><span class="fav-unit fav-unit-mealFav15">★</span><span class="fav-unit fav-unit-mealFav16">★</span><span class="fav-unit fav-unit-mealFav17">★</span><span class="fav-unit fav-unit-mealFav18">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-calorie tile restaurant-4 category-quick" for="modalToggle4"><div class="tile-name">Chick-fil-A</div>
+<div class="option-count">4 meal options</div>
+<div class="card-badges"><span class="card-badge">Lower Calorie</span></div>
+<div class="favorite-count count-modal-4"><span class="count-icons"><span class="fav-unit fav-unit-mealFav19">★</span><span class="fav-unit fav-unit-mealFav20">★</span><span class="fav-unit fav-unit-mealFav21">★</span><span class="fav-unit fav-unit-mealFav22">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="filter-best restaurant-card filter-protein filter-certain tile restaurant-5 category-quick" for="modalToggle5"><div class="tile-name">Culver’s</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">Best Options</span><span class="card-badge">Best Option</span><span class="card-badge">High Protein</span></div>
+<div class="favorite-count count-modal-5"><span class="count-icons"><span class="fav-unit fav-unit-mealFav23">★</span><span class="fav-unit fav-unit-mealFav24">★</span><span class="fav-unit fav-unit-mealFav25">★</span><span class="fav-unit fav-unit-mealFav26">★</span><span class="fav-unit fav-unit-mealFav27">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card tile restaurant-6 category-quick" for="modalToggle6"><div class="tile-name">Federico’s Mexican Food</div>
+<div class="option-count">7 meal options</div>
+<div class="card-badges"><span class="card-badge">More Options</span></div>
+<div class="favorite-count count-modal-6"><span class="count-icons"><span class="fav-unit fav-unit-mealFav28">★</span><span class="fav-unit fav-unit-mealFav29">★</span><span class="fav-unit fav-unit-mealFav30">★</span><span class="fav-unit fav-unit-mealFav31">★</span><span class="fav-unit fav-unit-mealFav32">★</span><span class="fav-unit fav-unit-mealFav102">★</span><span class="fav-unit fav-unit-mealFav103">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="filter-best restaurant-card filter-calorie filter-certain tile restaurant-7 category-quick" for="modalToggle7"><div class="tile-name">Five Guys</div>
+<div class="option-count">3 meal options</div>
+<div class="card-badges"><span class="card-badge">Best Options</span><span class="card-badge">Best Option</span><span class="card-badge">Lower Calorie</span></div>
+<div class="favorite-count count-modal-7"><span class="count-icons"><span class="fav-unit fav-unit-mealFav33">★</span><span class="fav-unit fav-unit-mealFav34">★</span><span class="fav-unit fav-unit-mealFav35">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card tile restaurant-8 category-quick" for="modalToggle8"><div class="tile-name">Jack in the Box</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">More Options</span></div>
+<div class="favorite-count count-modal-8"><span class="count-icons"><span class="fav-unit fav-unit-mealFav36">★</span><span class="fav-unit fav-unit-mealFav37">★</span><span class="fav-unit fav-unit-mealFav38">★</span><span class="fav-unit fav-unit-mealFav39">★</span><span class="fav-unit fav-unit-mealFav40">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-protein filter-calorie filter-certain tile restaurant-9 category-quick" for="modalToggle9"><div class="tile-name">KFC</div>
+<div class="option-count">3 meal options</div>
+<div class="card-badges"><span class="card-badge">Lower Calorie</span><span class="card-badge">High Protein</span></div>
+<div class="favorite-count count-modal-9"><span class="count-icons"><span class="fav-unit fav-unit-mealFav41">★</span><span class="fav-unit fav-unit-mealFav42">★</span><span class="fav-unit fav-unit-mealFav43">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-protein filter-certain tile restaurant-10 category-specialty" for="modalToggle10"><div class="tile-name">Mesquite Fresh Street Mex</div>
+<div class="option-count">3 meal options</div>
+<div class="card-badges"><span class="card-badge">High Protein</span></div>
+<div class="favorite-count count-modal-10"><span class="count-icons"><span class="fav-unit fav-unit-mealFav44">★</span><span class="fav-unit fav-unit-mealFav45">★</span><span class="fav-unit fav-unit-mealFav46">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="filter-best restaurant-card filter-protein filter-certain tile restaurant-11 category-specialty" for="modalToggle11"><div class="tile-name">MOD Pizza</div>
+<div class="option-count">2 meal options</div>
+<div class="card-badges"><span class="card-badge">Best Options</span><span class="card-badge">Best Option</span><span class="card-badge">High Protein</span></div>
+<div class="favorite-count count-modal-11"><span class="count-icons"><span class="fav-unit fav-unit-mealFav47">★</span><span class="fav-unit fav-unit-mealFav48">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-protein filter-calorie filter-certain tile restaurant-12 category-quick" for="modalToggle12"><div class="tile-name">Panda Express</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">Lower Calorie</span><span class="card-badge">High Protein</span></div>
+<div class="favorite-count count-modal-12"><span class="count-icons"><span class="fav-unit fav-unit-mealFav49">★</span><span class="fav-unit fav-unit-mealFav50">★</span><span class="fav-unit fav-unit-mealFav51">★</span><span class="fav-unit fav-unit-mealFav52">★</span><span class="fav-unit fav-unit-mealFav53">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="filter-best restaurant-card filter-protein filter-certain tile restaurant-13 category-specialty" for="modalToggle13"><div class="tile-name">Panera Bread</div>
+<div class="option-count">4 meal options</div>
+<div class="card-badges"><span class="card-badge">Best Options</span><span class="card-badge">High Protein</span></div>
+<div class="favorite-count count-modal-13"><span class="count-icons"><span class="fav-unit fav-unit-mealFav54">★</span><span class="fav-unit fav-unit-mealFav55">★</span><span class="fav-unit fav-unit-mealFav56">★</span><span class="fav-unit fav-unit-mealFav57">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-protein filter-certain tile restaurant-14 category-quick" for="modalToggle14"><div class="tile-name">Popeyes</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">High Protein</span></div>
+<div class="favorite-count count-modal-14"><span class="count-icons"><span class="fav-unit fav-unit-mealFav58">★</span><span class="fav-unit fav-unit-mealFav59">★</span><span class="fav-unit fav-unit-mealFav60">★</span><span class="fav-unit fav-unit-mealFav61">★</span><span class="fav-unit fav-unit-mealFav62">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-calorie tile restaurant-15 category-specialty" for="modalToggle15"><div class="tile-name">Potbelly</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">Lower Calorie</span></div>
+<div class="favorite-count count-modal-15"><span class="count-icons"><span class="fav-unit fav-unit-mealFav63">★</span><span class="fav-unit fav-unit-mealFav64">★</span><span class="fav-unit fav-unit-mealFav65">★</span><span class="fav-unit fav-unit-mealFav66">★</span><span class="fav-unit fav-unit-mealFav67">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-calorie tile restaurant-16 category-specialty" for="modalToggle16">
+<div class="tile-name">Robeks Fresh Juices &amp; Smoothies</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">Lower Calorie</span></div>
+<div class="favorite-count count-modal-16"><span class="count-icons"><span class="fav-unit fav-unit-mealFav68">★</span><span class="fav-unit fav-unit-mealFav69">★</span><span class="fav-unit fav-unit-mealFav70">★</span><span class="fav-unit fav-unit-mealFav71">★</span><span class="fav-unit fav-unit-mealFav72">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="filter-best restaurant-card filter-calorie filter-certain tile restaurant-17 category-quick" for="modalToggle17"><div class="tile-name">Shake Shack</div>
+<div class="option-count">3 meal options</div>
+<div class="card-badges"><span class="card-badge">Best Options</span><span class="card-badge">Best Option</span><span class="card-badge">Lower Calorie</span></div>
+<div class="favorite-count count-modal-17"><span class="count-icons"><span class="fav-unit fav-unit-mealFav73">★</span><span class="fav-unit fav-unit-mealFav74">★</span><span class="fav-unit fav-unit-mealFav75">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card tile restaurant-18 category-specialty" for="modalToggle18">
+<div class="tile-name">T&amp;Y Hawaiian BBQ</div>
+<div class="option-count">4 meal options</div>
+<div class="card-badges"><span class="card-badge">More Options</span></div>
+<div class="favorite-count count-modal-18"><span class="count-icons"><span class="fav-unit fav-unit-mealFav76">★</span><span class="fav-unit fav-unit-mealFav77">★</span><span class="fav-unit fav-unit-mealFav78">★</span><span class="fav-unit fav-unit-mealFav79">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-protein filter-certain tile restaurant-19 category-specialty" for="modalToggle19"><div class="tile-name">Tacos Chilango</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">High Protein</span></div>
+<div class="favorite-count count-modal-19"><span class="count-icons"><span class="fav-unit fav-unit-mealFav80">★</span><span class="fav-unit fav-unit-mealFav81">★</span><span class="fav-unit fav-unit-mealFav82">★</span><span class="fav-unit fav-unit-mealFav83">★</span><span class="fav-unit fav-unit-mealFav84">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card tile restaurant-20 category-specialty" for="modalToggle20"><div class="tile-name">Tacos El Flaco</div>
+<div class="option-count">2 meal options</div>
+<div class="card-badges"><span class="card-badge">More Options</span></div>
+<div class="favorite-count count-modal-20"><span class="count-icons"><span class="fav-unit fav-unit-mealFav85">★</span><span class="fav-unit fav-unit-mealFav86">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="restaurant-card filter-calorie tile restaurant-21 category-specialty" for="modalToggle21"><div class="tile-name">Tropical Smoothie Cafe</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">Lower Calorie</span></div>
+<div class="favorite-count count-modal-21"><span class="count-icons"><span class="fav-unit fav-unit-mealFav87">★</span><span class="fav-unit fav-unit-mealFav88">★</span><span class="fav-unit fav-unit-mealFav89">★</span><span class="fav-unit fav-unit-mealFav90">★</span><span class="fav-unit fav-unit-mealFav91">★</span></span><span class="fav-count-label">favorites</span></div></label><label class="filter-best restaurant-card filter-certain tile restaurant-22 category-quick" for="modalToggle22"><div class="tile-name">Wendy’s</div>
+<div class="option-count">5 meal options</div>
+<div class="card-badges"><span class="card-badge">Best Options</span><span class="card-badge">Best Option</span></div>
+<div class="favorite-count count-modal-22"><span class="count-icons"><span class="fav-unit fav-unit-mealFav92">★</span><span class="fav-unit fav-unit-mealFav93">★</span><span class="fav-unit fav-unit-mealFav94">★</span><span class="fav-unit fav-unit-mealFav95">★</span><span class="fav-unit fav-unit-mealFav96">★</span></span><span class="fav-count-label">favorites</span></div></label></div></main>
+<main class="page" id="favoritesPage"><div class="kicker">Your Favorites</div><h1>Favorites</h1><p class="sub">Saved menu items, one tap away.</p>
+<div class="favorite-items"><label class="favorite-item synced-favorite fav-for-mealFav1" for="modalToggle0">
+<div class="favorite-head"><div class="favorite-restaurant">BJ’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Plain/unseasoned oven-roasted Atlantic salmon; no lemon-chardonnay butter sauce; replace rice pilaf with asparagus; keep broccoli</div><div class="favorite-macros">Estimated 400–500 cal · 45–50 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav2" for="modalToggle0">
+<div class="favorite-head"><div class="favorite-restaurant">BJ’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Plain rib-eye + broccoli/asparagus — Estimated 700–850 cal | ~100 g protein</div><div class="favorite-macros">Estimated 700–850 cal · ~100 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav3" for="modalToggle0">
+<div class="favorite-head"><div class="favorite-restaurant">BJ’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Customized California Chicken Club — Estimated 650–800 cal | 60–70 g protein</div><div class="favorite-macros">Estimated 650–800 cal · 60–70 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav4" for="modalToggle0">
+<div class="favorite-head"><div class="favorite-restaurant">BJ’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Plain cheeseburger + broccoli — Estimated 650–750 cal | 45–50 g protein</div><div class="favorite-macros">Estimated 650–750 cal · 45–50 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav5" for="modalToggle0">
+<div class="favorite-head"><div class="favorite-restaurant">BJ’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">House salad + plain protein + plain oil/vinegar — Estimated 350–500 cal | 35–45 g protein</div><div class="favorite-macros">Estimated 350–500 cal · 35–45 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav6" for="modalToggle1">
+<div class="favorite-head"><div class="favorite-restaurant">Burger King</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Double Cheeseburger — no ketchup, no mustard</div><div class="favorite-macros">Estimated 370–390 cal · ~24 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav7" for="modalToggle1">
+<div class="favorite-head"><div class="favorite-restaurant">Burger King</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Bacon Double Cheeseburger, no ketchup/mustard — Estimated 410–430 cal | 27–28 g protein</div><div class="favorite-macros">Estimated 410–430 cal · 27–28 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav8" for="modalToggle1">
+<div class="favorite-head"><div class="favorite-restaurant">Burger King</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Whopper, no onion/ketchup/mayo — Estimated 500–530 cal | 30–31 g protein</div><div class="favorite-macros">Estimated 500–530 cal · 30–31 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav9" for="modalToggle1">
+<div class="favorite-head"><div class="favorite-restaurant">Burger King</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Bunless Double Cheeseburger — Estimated 250–290 cal | 22–24 g protein</div><div class="favorite-macros">Estimated 250–290 cal · 22–24 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav10" for="modalToggle2">
+<div class="favorite-head"><div class="favorite-restaurant">Café Zupas</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Large California Cobb — no dressing, no onions; add extra grilled chicken</div><div class="favorite-macros">320 cal · 28 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav11" for="modalToggle2">
+<div class="favorite-head"><div class="favorite-restaurant">Café Zupas</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Avocado Caesar — no dressing, no croutons; add extra chicken — 370 cal | 32 g protein before extra chicken</div><div class="favorite-macros">370 cal · 32 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav12" for="modalToggle2">
+<div class="favorite-head"><div class="favorite-restaurant">Café Zupas</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Custom Cobb-style salad with double chicken; omit onion and proprietary dressing</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav13" for="modalToggle2">
+<div class="favorite-head"><div class="favorite-restaurant">Café Zupas</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Ham &amp; Provolone — no spread</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav14" for="modalToggle2">
+<div class="favorite-head"><div class="favorite-restaurant">Café Zupas</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Turkey Avocado Club — no sauce</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav15" for="modalToggle3">
+<div class="favorite-head"><div class="favorite-restaurant">Carl’s Jr.</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Double Cheeseburger — NO onions, NO ketchup; keep cheese, pickles, mustard</div><div class="favorite-macros">Estimated 350–370 cal · ~19 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav16" for="modalToggle3">
+<div class="favorite-head"><div class="favorite-restaurant">Carl’s Jr.</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Hamburger/Cheeseburger — no ketchup, no onion</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav17" for="modalToggle3">
+<div class="favorite-head"><div class="favorite-restaurant">Carl’s Jr.</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Famous Star — no onion, no Special Sauce</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav18" for="modalToggle3">
+<div class="favorite-head"><div class="favorite-restaurant">Carl’s Jr.</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Bacon Egg &amp; Cheese Biscuit — proceed cautiously; breakfast components not fully disclosed</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav19" for="modalToggle4">
+<div class="favorite-head"><div class="favorite-restaurant">Chick-fil-A</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">8-count Original Nuggets + Zesty Buffalo Sauce</div><div class="favorite-macros">275 cal · 27 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav20" for="modalToggle4">
+<div class="favorite-head"><div class="favorite-restaurant">Chick-fil-A</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">8-count nuggets + medium waffle fries — 695 cal | 32 g protein</div><div class="favorite-macros">695 cal · 32 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav21" for="modalToggle4">
+<div class="favorite-head"><div class="favorite-restaurant">Chick-fil-A</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">8-count nuggets + hash browns</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav22" for="modalToggle4">
+<div class="favorite-head"><div class="favorite-restaurant">Chick-fil-A</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">8-count nuggets + mac &amp; cheese — 700 cal | 47 g protein; mac &amp; cheese 🟡</div><div class="favorite-macros">700 cal · 47 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav23" for="modalToggle5">
+<div class="favorite-head"><div class="favorite-restaurant">Culver’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Bunless Double ButterBurger Cheese + steamed broccoli</div><div class="favorite-macros">Estimated 520 cal · ~38 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav24" for="modalToggle5">
+<div class="favorite-head"><div class="favorite-restaurant">Culver’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Bunless Double ButterBurger Cheese + fries — Estimated 700 cal | ~38 g protein</div><div class="favorite-macros">Estimated 700 cal · ~38 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav25" for="modalToggle5">
+<div class="favorite-head"><div class="favorite-restaurant">Culver’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Bunless Double ButterBurger + Wisconsin Cheddar Cheese Sauce</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav26" for="modalToggle5">
+<div class="favorite-head"><div class="favorite-restaurant">Culver’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Modified grilled chicken — only after current seasoning confirmation</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav27" for="modalToggle5">
+<div class="favorite-head"><div class="favorite-restaurant">Culver’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Modified Garden Fresco Salad — omit unverified dressing/components</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav28" for="modalToggle6">
+<div class="favorite-head"><div class="favorite-restaurant">Federico’s Mexican Food</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Steak-and-egg burrito — no pico, no salsa; ask staff to confirm steak seasoning has no onion/onion powder and no problematic fructose</div><div class="favorite-macros">Nutrition unavailable</div></label><label class="favorite-item synced-favorite fav-for-mealFav29" for="modalToggle6">
+<div class="favorite-head"><div class="favorite-restaurant">Federico’s Mexican Food</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Country burrito — potato, egg, cheese only</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav30" for="modalToggle6">
+<div class="favorite-head"><div class="favorite-restaurant">Federico’s Mexican Food</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Carne-asada quesadilla — no salsa; confirm marinade/seasoning</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav31" for="modalToggle6">
+<div class="favorite-head"><div class="favorite-restaurant">Federico’s Mexican Food</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Pollo-asado taco — no onion/salsa; confirm marinade/seasoning</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav32" for="modalToggle6">
+<div class="favorite-head"><div class="favorite-restaurant">Federico’s Mexican Food</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Plain cheese quesadilla</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav103" for="modalToggle6"><div class="favorite-head"><div class="favorite-restaurant">Federico’s Mexican Food</div><span class="favorite-star">★</span></div><div class="favorite-dish">Chicken rolled taco combo — 4 tacos, beans and rice</div><div class="favorite-macros">Macros not available · 🟠 Verify ingredients</div></label><label class="favorite-item synced-favorite fav-for-mealFav102" for="modalToggle6"><div class="favorite-head"><div class="favorite-restaurant">Federico’s Mexican Food</div><span class="favorite-star">★</span></div><div class="favorite-dish">Chicken rolled tacos — 3 tacos with cheese</div><div class="favorite-macros">Macros not available · 🟠 Verify ingredients</div></label><label class="favorite-item synced-favorite fav-for-mealFav33" for="modalToggle7">
+<div class="favorite-head"><div class="favorite-restaurant">Five Guys</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Little Cheeseburger bowl or lettuce wrap — beef, cheese, lettuce, tomato, green peppers, jalapeños; hot sauce or mustard</div><div class="favorite-macros">Estimated 375–390 cal · ~20 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav34" for="modalToggle7">
+<div class="favorite-head"><div class="favorite-restaurant">Five Guys</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Little Hamburger bowl/lettuce wrap with safe vegetables</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav35" for="modalToggle7">
+<div class="favorite-head"><div class="favorite-restaurant">Five Guys</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Regular fries as a side — potatoes, peanut oil, salt</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav36" for="modalToggle8">
+<div class="favorite-head"><div class="favorite-restaurant">Jack in the Box</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Jumbo Jack — no onions, no ketchup; mustard only</div><div class="favorite-macros">Estimated 450–490 cal · ~26 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav37" for="modalToggle8">
+<div class="favorite-head"><div class="favorite-restaurant">Jack in the Box</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Double beef burger — no onion/ketchup; Estimated 600–750 cal | 35–45 g protein</div><div class="favorite-macros">Estimated 600–750 cal · 35–45 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav38" for="modalToggle8">
+<div class="favorite-head"><div class="favorite-restaurant">Jack in the Box</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Breakfast Jack — Estimated 350–400 cal | 16–20 g protein</div><div class="favorite-macros">Estimated 350–400 cal · 16–20 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav39" for="modalToggle8">
+<div class="favorite-head"><div class="favorite-restaurant">Jack in the Box</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Simplified breakfast platter — Estimated 450–550 cal | 18–25 g protein</div><div class="favorite-macros">Estimated 450–550 cal · 18–25 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav40" for="modalToggle8">
+<div class="favorite-head"><div class="favorite-restaurant">Jack in the Box</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Jr</div><div class="favorite-macros">Estimated 290–320 cal · ~14 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav41" for="modalToggle9">
+<div class="favorite-head"><div class="favorite-restaurant">KFC</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">3 Original Recipe Tenders + corn; no sauce</div><div class="favorite-macros">Estimated 400 cal · ~35 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav42" for="modalToggle9">
+<div class="favorite-head"><div class="favorite-restaurant">KFC</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Original Recipe breast + corn — 460 cal | ~41 g protein</div><div class="favorite-macros">460 cal · ~41 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav43" for="modalToggle9">
+<div class="favorite-head"><div class="favorite-restaurant">KFC</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">3 Original Recipe Tenders + mashed potatoes, no gravy — 440 cal | ~35 g protein</div><div class="favorite-macros">440 cal · ~35 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav44" for="modalToggle10">
+<div class="favorite-head"><div class="favorite-restaurant">Mesquite Fresh Street Mex</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Custom chicken packed bowl — spring mix + chicken + cabbage + cheese + sour cream + grilled serrano + lime; omit rice, beans, fajita vegetables, pico, onions, pickled onions, guac, chipotle sauce, and all salsas</div><div class="favorite-macros">Estimated 350–500 cal · 30–40 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav45" for="modalToggle10">
+<div class="favorite-head"><div class="favorite-restaurant">Mesquite Fresh Street Mex</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Chicken corn tacos with the same omissions — baseline 3 tacos 510 cal | 39 g protein</div><div class="favorite-macros">510 cal · 39 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav46" for="modalToggle10">
+<div class="favorite-head"><div class="favorite-restaurant">Mesquite Fresh Street Mex</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Steak bowl/tacos only after seasoning confirmation</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav47" for="modalToggle11">
+<div class="favorite-head"><div class="favorite-restaurant">MOD Pizza</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Small thin-crust Chicken Pesto Mini Pizza — pesto, mozzarella, double grilled chicken, mushrooms, roasted red peppers, spinach, basil</div><div class="favorite-macros">Estimated ~475 cal · ~35 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav48" for="modalToggle11">
+<div class="favorite-head"><div class="favorite-restaurant">MOD Pizza</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Double-chicken balsamic salad — Estimated ~315 cal | ~29 g protein</div><div class="favorite-macros">Estimated ~315 cal · ~29 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav49" for="modalToggle12">
+<div class="favorite-head"><div class="favorite-restaurant">Panda Express</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Grilled Teriyaki Chicken à la carte — 275 cal | 33 g protein</div><div class="favorite-macros">275 cal · 33 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav50" for="modalToggle12">
+<div class="favorite-head"><div class="favorite-restaurant">Panda Express</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Grilled Teriyaki Chicken + steamed white rice — 795 cal | 43 g protein</div><div class="favorite-macros">795 cal · 43 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav51" for="modalToggle12">
+<div class="favorite-head"><div class="favorite-restaurant">Panda Express</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Broccoli Beef + white rice — 670 cal | 25 g protein</div><div class="favorite-macros">670 cal · 25 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav52" for="modalToggle12">
+<div class="favorite-head"><div class="favorite-restaurant">Panda Express</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Mushroom Chicken + white rice — 740 cal | 23 g protein</div><div class="favorite-macros">740 cal · 23 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav53" for="modalToggle12">
+<div class="favorite-head"><div class="favorite-restaurant">Panda Express</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Broccoli Beef à la carte — 150 cal | 15 g protein</div><div class="favorite-macros">150 cal · 15 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav54" for="modalToggle13">
+<div class="favorite-head"><div class="favorite-restaurant">Panera Bread</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Greek Salad with Chicken — no red onions; Greek dressing on side, use about half</div><div class="favorite-macros">Estimated ~540 cal · ~30 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav55" for="modalToggle13">
+<div class="favorite-head"><div class="favorite-restaurant">Panera Bread</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Chicken Caesar — no Caesar dressing; use Greek dressing; omit croutons if desired</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav56" for="modalToggle13">
+<div class="favorite-head"><div class="favorite-restaurant">Panera Bread</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Half Turkey &amp; Cheddar on Country Rustic Sourdough — no onion — ~420 cal | 20 g protein</div><div class="favorite-macros">~420 cal · 20 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav57" for="modalToggle13">
+<div class="favorite-head"><div class="favorite-restaurant">Panera Bread</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">French baguette — 190 cal | 6 g protein</div><div class="favorite-macros">190 cal · 6 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav58" for="modalToggle14">
+<div class="favorite-head"><div class="favorite-restaurant">Popeyes</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">3-piece Spicy Tenders + regular Mac &amp; Cheese + Louisiana Hot Sauce</div><div class="favorite-macros">~670 cal · 46 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav59" for="modalToggle14">
+<div class="favorite-head"><div class="favorite-restaurant">Popeyes</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">3-piece Spicy Tenders alone — 390 cal | 35 g protein</div><div class="favorite-macros">390 cal · 35 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav60" for="modalToggle14">
+<div class="favorite-head"><div class="favorite-restaurant">Popeyes</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Tenders + coleslaw — 550 cal | 36 g protein</div><div class="favorite-macros">550 cal · 36 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav61" for="modalToggle14">
+<div class="favorite-head"><div class="favorite-restaurant">Popeyes</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Tenders + Cajun fries — 660 cal | 38 g protein</div><div class="favorite-macros">660 cal · 38 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav62" for="modalToggle14">
+<div class="favorite-head"><div class="favorite-restaurant">Popeyes</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Mac &amp; Cheese + biscuit — 510 cal | 14 g protein</div><div class="favorite-macros">510 cal · 14 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav63" for="modalToggle15">
+<div class="favorite-head"><div class="favorite-restaurant">Potbelly</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Skinny Turkey &amp; Swiss on multigrain or white — no mayo, onion, or hot peppers; add lettuce, tomato, cucumber, oil, red-wine vinegar</div><div class="favorite-macros">~315 cal · ~28 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav64" for="modalToggle15">
+<div class="favorite-head"><div class="favorite-restaurant">Potbelly</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Skinny Grilled Chicken &amp; Cheddar — ~335 cal | 33 g protein</div><div class="favorite-macros">~335 cal · 33 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav65" for="modalToggle15">
+<div class="favorite-head"><div class="favorite-restaurant">Potbelly</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Smoked Ham &amp; Swiss — ~340 cal | 27 g protein</div><div class="favorite-macros">~340 cal · 27 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav66" for="modalToggle15">
+<div class="favorite-head"><div class="favorite-restaurant">Potbelly</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Roast Beef &amp; Provolone — ~355 cal | 28 g protein</div><div class="favorite-macros">~355 cal · 28 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav67" for="modalToggle15">
+<div class="favorite-head"><div class="favorite-restaurant">Potbelly</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Custom chicken salad-style build only with red onion/apples/cranberries/candied walnuts removed and dressing verified — 🟠</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav68" for="modalToggle16">
+<div class="favorite-head"><div class="favorite-restaurant">Robeks Fresh Juices &amp; Smoothies</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Customized Medium Super Green — remove/replace juice or frozen-yogurt components that contain problematic fruit/sweeteners; add whey</div><div class="favorite-macros">Estimated ~250–320 cal · ~16+ g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav69" for="modalToggle16">
+<div class="favorite-head"><div class="favorite-restaurant">Robeks Fresh Juices &amp; Smoothies</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Avocado &amp; Egg Toast — no bacon bits unless onion-free — 510 cal | 15 g protein</div><div class="favorite-macros">510 cal · 15 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav70" for="modalToggle16">
+<div class="favorite-head"><div class="favorite-restaurant">Robeks Fresh Juices &amp; Smoothies</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Classic Avocado Toast — ~430 cal | 7 g protein</div><div class="favorite-macros">~430 cal · 7 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav71" for="modalToggle16">
+<div class="favorite-head"><div class="favorite-restaurant">Robeks Fresh Juices &amp; Smoothies</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Modified Polar Pineapple + protein — only with problematic bases/sweeteners removed</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav72" for="modalToggle16">
+<div class="favorite-head"><div class="favorite-restaurant">Robeks Fresh Juices &amp; Smoothies</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Lemon Ginger Cayenne shot — 16 cal | 0 g protein</div><div class="favorite-macros">16 cal · 0 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav73" for="modalToggle17">
+<div class="favorite-head"><div class="favorite-restaurant">Shake Shack</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Double hamburger, lettuce-wrapped — no onion, no sauce; lettuce + tomato</div><div class="favorite-macros">Estimated 385–390 cal · ~39 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav74" for="modalToggle17">
+<div class="favorite-head"><div class="favorite-restaurant">Shake Shack</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Single cheeseburger lettuce-wrapped — ~265 cal</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav75" for="modalToggle17">
+<div class="favorite-head"><div class="favorite-restaurant">Shake Shack</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Double cheeseburger lettuce-wrapped — ~455 cal</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav76" for="modalToggle18">
+<div class="favorite-head"><div class="favorite-restaurant">T&amp;Y Hawaiian BBQ</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Kalua pork + white rice + double steamed cabbage/broccoli/carrots; substitute vegetables for macaroni salad; no sauce</div><div class="favorite-macros">Nutrition unavailable</div></label><label class="favorite-item synced-favorite fav-for-mealFav77" for="modalToggle18">
+<div class="favorite-head"><div class="favorite-restaurant">T&amp;Y Hawaiian BBQ</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Any verified plain protein + white rice + steamed vegetables</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav78" for="modalToggle18">
+<div class="favorite-head"><div class="favorite-restaurant">T&amp;Y Hawaiian BBQ</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Spam &amp; egg modified — only after processed-meat ingredient check</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav79" for="modalToggle18">
+<div class="favorite-head"><div class="favorite-restaurant">T&amp;Y Hawaiian BBQ</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Shrimp or egg fried rice — only after seasoning verification</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav80" for="modalToggle19">
+<div class="favorite-head"><div class="favorite-restaurant">Tacos Chilango</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">3 asada corn-tortilla tacos — no onion, no salsa; cilantro + lime</div><div class="favorite-macros">Estimated 450–550 cal · 30–40 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav81" for="modalToggle19">
+<div class="favorite-head"><div class="favorite-restaurant">Tacos Chilango</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Grilled chicken tacos — no onion/salsa; verify seasoning</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav82" for="modalToggle19">
+<div class="favorite-head"><div class="favorite-restaurant">Tacos Chilango</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Carnitas tacos — no onion/salsa; verify seasoning</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav83" for="modalToggle19">
+<div class="favorite-head"><div class="favorite-restaurant">Tacos Chilango</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Asada queso — verify meat seasoning</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav84" for="modalToggle19">
+<div class="favorite-head"><div class="favorite-restaurant">Tacos Chilango</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Plain cheese quesadilla</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav85" for="modalToggle20">
+<div class="favorite-head"><div class="favorite-restaurant">Tacos El Flaco</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">5 bistec corn tacos — no grilled/fresh onion-cilantro mix; no salsa; ask whether bistec seasoning/marinade contains onion/onion powder</div><div class="favorite-macros">Nutrition unavailable</div></label><label class="favorite-item synced-favorite fav-for-mealFav86" for="modalToggle20">
+<div class="favorite-head"><div class="favorite-restaurant">Tacos El Flaco</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Other plain corn-tortilla meat tacos only after marinade/seasoning verification</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav87" for="modalToggle21">
+<div class="favorite-head"><div class="favorite-restaurant">Tropical Smoothie Cafe</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Turkey &amp; Cheddar Kids Wrap</div><div class="favorite-macros">360 cal · 23 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav88" for="modalToggle21">
+<div class="favorite-head"><div class="favorite-restaurant">Tropical Smoothie Cafe</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Chicken Cheese ’Dilla — no salsa — 480 cal | 29 g protein</div><div class="favorite-macros">480 cal · 29 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav89" for="modalToggle21">
+<div class="favorite-head"><div class="favorite-restaurant">Tropical Smoothie Cafe</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Three Cheese Chicken ’Dilla — no salsa — 540 cal | 31 g protein</div><div class="favorite-macros">540 cal · 31 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav90" for="modalToggle21">
+<div class="favorite-head"><div class="favorite-restaurant">Tropical Smoothie Cafe</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">All American Bacon Wrap — 410 cal | 17 g protein</div><div class="favorite-macros">410 cal · 17 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav91" for="modalToggle21">
+<div class="favorite-head"><div class="favorite-restaurant">Tropical Smoothie Cafe</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Jetty Punch — no added sugar + whey; standard 360 cal/2 g + whey 100 cal/16 g; modified total unpublished</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav92" for="modalToggle22">
+<div class="favorite-head"><div class="favorite-restaurant">Wendy’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Dave’s Single — no bun / lettuce wrapped; no onion; no ketchup; keep cheese, mayo, lettuce, tomato; no pickles</div><div class="favorite-macros">Estimated 390–420 cal · 25–27 g protein</div></label><label class="favorite-item synced-favorite fav-for-mealFav93" for="modalToggle22">
+<div class="favorite-head"><div class="favorite-restaurant">Wendy’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Dave’s Double lettuce-wrapped, no onion/ketchup</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav94" for="modalToggle22">
+<div class="favorite-head"><div class="favorite-restaurant">Wendy’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Bacon cheeseburger lettuce wrap, no onion/ketchup</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav95" for="modalToggle22">
+<div class="favorite-head"><div class="favorite-restaurant">Wendy’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Sour Cream &amp; Chive Baked Potato</div><div class="favorite-macros">Macros not available</div></label><label class="favorite-item synced-favorite fav-for-mealFav96" for="modalToggle22">
+<div class="favorite-head"><div class="favorite-restaurant">Wendy’s</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Bacon-Egg-Cheese Biscuit without breakfast potatoes — biscuit remains 🟡</div><div class="favorite-macros">Macros not available</div></label></div><label class="favorite-item synced-favorite fav-for-mealFav97" for="modalToggle23">
+<div class="favorite-head"><div class="favorite-restaurant">Bobby-Q BBQ Restaurant</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Plain/unseasoned 10 oz Wood-Fired Top Sirloin + steamed broccoli + plain baked potato</div><div class="favorite-macros">Estimated ~600–750 cal · ~60–70 g protein</div></label>
+<label class="favorite-item synced-favorite fav-for-mealFav98" for="modalToggle23">
+<div class="favorite-head"><div class="favorite-restaurant">Bobby-Q BBQ Restaurant</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Plain/unseasoned 8 oz filet mignon + steamed broccoli + plain baked potato</div><div class="favorite-macros">Estimated ~550–700 cal · ~50–55 g protein</div></label>
+<label class="favorite-item synced-favorite fav-for-mealFav99" for="modalToggle23">
+<div class="favorite-head"><div class="favorite-restaurant">Bobby-Q BBQ Restaurant</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Plain/unseasoned 14 oz ribeye + steamed broccoli + plain baked potato</div><div class="favorite-macros">Estimated ~900–1,100 cal · ~75–90 g protein</div></label>
+<label class="favorite-item synced-favorite fav-for-mealFav100" for="modalToggle23">
+<div class="favorite-head"><div class="favorite-restaurant">Bobby-Q BBQ Restaurant</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Brisket or pulled pork, no BBQ sauce — only after staff confirms the pre-smoking rub</div><div class="favorite-macros">Macros not available</div></label>
+<label class="favorite-item synced-favorite fav-for-mealFav101" for="modalToggle23">
+<div class="favorite-head"><div class="favorite-restaurant">Bobby-Q BBQ Restaurant</div><span class="favorite-star">★</span></div>
+<div class="favorite-dish">Yardbird rotisserie half chicken, no sauce — only after seasoning is confirmed</div><div class="favorite-macros">Macros not available</div></label>
+<div class="favorites-empty">Star a menu item and it will appear here.</div></main>
+<main class="page" id="settingsPage"><div class="kicker">Preferences</div><h1>Settings</h1><p class="sub">Your Restaurant Safe Order preferences.</p>
+<div class="settings-card"><div class="setting"><b>Diet profile</b><small>No onion · Fructose malabsorption</small></div><div class="setting"><b>Nutrition priority</b><small>High protein · Lower calorie</small></div><div class="setting"><b>Default restaurant view</b><small>Grid</small></div></div></main>
+<nav class="bottom">
+<label class="nav" for="tabRestaurants"><svg viewbox="0 0 24 24"><path d="M7 3v8M4.5 3v5c0 2 5 2 5 0V3M7 11v10M16 3v18M16 3c4 2 4 8 0 10"></path></svg>Restaurants</label>
+<label class="nav" for="tabFavorites"><svg viewbox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"></path></svg>Favorites</label>
+<label class="nav" for="tabSettings"><svg viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.5 1A7 7 0 0 0 14.7 6L14.4 3h-4.8L9.3 6a7 7 0 0 0-1.7 1.1l-2.5-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.5-1A7 7 0 0 0 9.3 18l.3 3h4.8l.3-3a7 7 0 0 0 1.7-1.1l2.5 1 2-3.4-2-1.5c.1-.3.1-.7.1-1z"></path></svg>Settings</label>
+</nav>
+<input class="modal-toggle" id="modalToggle0" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle0"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>BJ’s</h2></div><label class="x" for="modalToggle0">×</label></div>
+<p class="overall">🟡 Good with customization</p>
+<input class="fav-toggle" id="mealFav1" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav1" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 400–500 cal · 45–50 g protein</span></div>
+<div class="meal-name">Plain/unseasoned oven-roasted Atlantic salmon; no lemon-chardonnay butter sauce; replace rice pilaf with asparagus; keep broccoli</div>
+<div class="meal-full">Plain/unseasoned oven-roasted Atlantic salmon; no lemon-chardonnay butter sauce; replace rice pilaf with asparagus; keep broccoli. Estimated 400–500 cal | 45–50 g protein.</div>
+</div><input class="fav-toggle" id="mealFav2" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav2" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">Estimated 700–850 cal · ~100 g protein</span></div>
+<div class="meal-name">Plain rib-eye + broccoli/asparagus — Estimated 700–850 cal | ~100 g protein</div>
+<div class="meal-full">Plain rib-eye + broccoli/asparagus — Estimated 700–850 cal | ~100 g protein</div>
+</div><input class="fav-toggle" id="mealFav3" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav3" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">Estimated 650–800 cal · 60–70 g protein</span></div>
+<div class="meal-name">Customized California Chicken Club — Estimated 650–800 cal | 60–70 g protein</div>
+<div class="meal-full">Customized California Chicken Club — Estimated 650–800 cal | 60–70 g protein</div>
+</div><input class="fav-toggle" id="mealFav4" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav4" title="Favorite meal">☆</label><span class="meal-label">Option 4</span><span class="macro">Estimated 650–750 cal · 45–50 g protein</span></div>
+<div class="meal-name">Plain cheeseburger + broccoli — Estimated 650–750 cal | 45–50 g protein</div>
+<div class="meal-full">Plain cheeseburger + broccoli — Estimated 650–750 cal | 45–50 g protein</div>
+</div><input class="fav-toggle" id="mealFav5" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav5" title="Favorite meal">☆</label><span class="meal-label">Option 5</span><span class="macro">Estimated 350–500 cal · 35–45 g protein</span></div>
+<div class="meal-name">House salad + plain protein + plain oil/vinegar — Estimated 350–500 cal | 35–45 g protein</div>
+<div class="meal-full">House salad + plain protein + plain oil/vinegar — Estimated 350–500 cal | 35–45 g protein</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Official nutrition/allergen data does not fully disclose rubs, marinades, sauces, dressings, or soup recipes. No problematic high-fructose ingredient identified in the simplified salmon build, but onion/seasoning remains unknown.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle1" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle1"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Burger King</h2></div><label class="x" for="modalToggle1">×</label></div>
+<p class="overall">🟡 Likely safe with modification</p>
+<input class="fav-toggle" id="mealFav6" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav6" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 370–390 cal · ~24 g protein</span></div>
+<div class="meal-name">Double Cheeseburger — no ketchup, no mustard</div>
+<div class="meal-full">Double Cheeseburger — no ketchup, no mustard. Estimated 370–390 cal | ~24 g protein.</div>
+</div><input class="fav-toggle" id="mealFav7" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav7" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">Estimated 410–430 cal · 27–28 g protein</span></div>
+<div class="meal-name">Bacon Double Cheeseburger, no ketchup/mustard — Estimated 410–430 cal | 27–28 g protein</div>
+<div class="meal-full">Bacon Double Cheeseburger, no ketchup/mustard — Estimated 410–430 cal | 27–28 g protein</div>
+</div><input class="fav-toggle" id="mealFav8" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav8" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">Estimated 500–530 cal · 30–31 g protein</span></div>
+<div class="meal-name">Whopper, no onion/ketchup/mayo — Estimated 500–530 cal | 30–31 g protein</div>
+<div class="meal-full">Whopper, no onion/ketchup/mayo — Estimated 500–530 cal | 30–31 g protein</div>
+</div><input class="fav-toggle" id="mealFav9" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav9" title="Favorite meal">☆</label><span class="meal-label">Option 4</span><span class="macro">Estimated 250–290 cal · 22–24 g protein</span></div>
+<div class="meal-name">Bunless Double Cheeseburger — Estimated 250–290 cal | 22–24 g protein</div>
+<div class="meal-full">Bunless Double Cheeseburger — Estimated 250–290 cal | 22–24 g protein</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Beef, cheese, bacon, lettuce, tomato, and pickles were the strongest simple components. Ketchup contains onion powder even where HFCS-free. Fries were ingredient-compatible but share fryer exposure with onion rings.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle2" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle2"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Café Zupas</h2></div><label class="x" for="modalToggle2">×</label></div>
+<p class="overall">🟡 Customization-heavy</p>
+<input class="fav-toggle" id="mealFav10" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav10" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">320 cal · 28 g protein</span></div>
+<div class="meal-name">Large California Cobb — no dressing, no onions; add extra grilled chicken</div>
+<div class="meal-full">Large California Cobb — no dressing, no onions; add extra grilled chicken. 320 cal | 28 g protein before extra chicken. Use only plain oil/vinegar if confirmed unseasoned.</div>
+</div><input class="fav-toggle" id="mealFav11" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav11" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">370 cal · 32 g protein</span></div>
+<div class="meal-name">Avocado Caesar — no dressing, no croutons; add extra chicken — 370 cal | 32 g protein before extra chicken</div>
+<div class="meal-full">Avocado Caesar — no dressing, no croutons; add extra chicken — 370 cal | 32 g protein before extra chicken</div>
+</div><input class="fav-toggle" id="mealFav12" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav12" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">Custom Cobb-style salad with double chicken; omit onion and proprietary dressing</div>
+<div class="meal-full">Custom Cobb-style salad with double chicken; omit onion and proprietary dressing</div>
+</div><input class="fav-toggle" id="mealFav13" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav13" title="Favorite meal">☆</label><span class="meal-label">Option 4</span></div>
+<div class="meal-name">Ham &amp; Provolone — no spread</div>
+<div class="meal-full">Ham &amp; Provolone — no spread</div>
+</div><input class="fav-toggle" id="mealFav14" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav14" title="Favorite meal">☆</label><span class="meal-label">Option 5</span></div>
+<div class="meal-name">Turkey Avocado Club — no sauce</div>
+<div class="meal-full">Turkey Avocado Club — no sauce</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Multiple soups were confirmed to contain onion: Tomato Basil, Wisconsin Cauliflower, Lobster Bisque, Chicken Noodle, Mushroom Bisque, Chickpea &amp; Vegetable, and The Chris. Dressings, sauces, breads, meats, and chicken seasoning remain incompletely disclosed.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle3" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle3"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Carl’s Jr.</h2></div><label class="x" for="modalToggle3">×</label></div>
+<p class="overall">🟡 Likely safe with modification</p>
+<input class="fav-toggle" id="mealFav15" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav15" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 350–370 cal · ~19 g protein</span></div>
+<div class="meal-name">Double Cheeseburger — NO onions, NO ketchup; keep cheese, pickles, mustard</div>
+<div class="meal-full">Double Cheeseburger — NO onions, NO ketchup; keep cheese, pickles, mustard. Estimated 350–370 cal | ~19 g protein.</div>
+</div><input class="fav-toggle" id="mealFav16" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav16" title="Favorite meal">☆</label><span class="meal-label">Option 2</span></div>
+<div class="meal-name">Hamburger/Cheeseburger — no ketchup, no onion</div>
+<div class="meal-full">Hamburger/Cheeseburger — no ketchup, no onion</div>
+</div><input class="fav-toggle" id="mealFav17" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav17" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">Famous Star — no onion, no Special Sauce</div>
+<div class="meal-full">Famous Star — no onion, no Special Sauce</div>
+</div><input class="fav-toggle" id="mealFav18" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav18" title="Favorite meal">☆</label><span class="meal-label">Option 4</span></div>
+<div class="meal-name">Bacon Egg &amp; Cheese Biscuit — proceed cautiously; breakfast components not fully disclosed</div>
+<div class="meal-full">Bacon Egg &amp; Cheese Biscuit — proceed cautiously; breakfast components not fully disclosed</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Visible onion can be removed from some burgers, but full ingredient disclosure is incomplete. Ketchup removal reduces fructose/HFCS concern. Chicken breading/seasoning has historical onion concern and remains unsuitable without current confirmation.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle4" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle4"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Chick-fil-A</h2></div><label class="x" for="modalToggle4">×</label></div>
+<p class="overall">🟡 Best available option still has spice uncertainty</p>
+<input checked="" class="fav-toggle" id="mealFav19" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav19" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">275 cal · 27 g protein</span></div>
+<div class="meal-name">8-count Original Nuggets + Zesty Buffalo Sauce</div>
+<div class="meal-full">8-count Original Nuggets + Zesty Buffalo Sauce. 275 cal | 27 g protein.</div>
+</div><input class="fav-toggle" id="mealFav20" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav20" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">695 cal · 32 g protein</span></div>
+<div class="meal-name">8-count nuggets + medium waffle fries — 695 cal | 32 g protein</div>
+<div class="meal-full">8-count nuggets + medium waffle fries — 695 cal | 32 g protein</div>
+</div><input class="fav-toggle" id="mealFav21" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav21" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">8-count nuggets + hash browns</div>
+<div class="meal-full">8-count nuggets + hash browns</div>
+</div><input class="fav-toggle" id="mealFav22" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav22" title="Favorite meal">☆</label><span class="meal-label">Option 4</span><span class="macro">700 cal · 47 g protein</span></div>
+<div class="meal-name">8-count nuggets + mac &amp; cheese — 700 cal | 47 g protein; mac &amp; cheese 🟡</div>
+<div class="meal-full">8-count nuggets + mac &amp; cheese — 700 cal | 47 g protein; mac &amp; cheese 🟡</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Original Nuggets use unspecified “spices,” so onion cannot be ruled out. Grilled chicken contains onion powder/dehydrated onion and is 🔴. Zesty Buffalo had no identified onion or problematic high-fructose ingredient.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle5" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle5"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Culver’s</h2></div><label class="x" for="modalToggle5">×</label></div>
+<p class="overall">🟢/🟡 Strong burger options</p>
+<input class="fav-toggle" id="mealFav23" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav23" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 520 cal · ~38 g protein</span></div>
+<div class="meal-name">Bunless Double ButterBurger Cheese + steamed broccoli</div>
+<div class="meal-full">Bunless Double ButterBurger Cheese + steamed broccoli. Estimated 520 cal | ~38 g protein.</div>
+</div><input class="fav-toggle" id="mealFav24" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav24" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">Estimated 700 cal · ~38 g protein</span></div>
+<div class="meal-name">Bunless Double ButterBurger Cheese + fries — Estimated 700 cal | ~38 g protein</div>
+<div class="meal-full">Bunless Double ButterBurger Cheese + fries — Estimated 700 cal | ~38 g protein</div>
+</div><input class="fav-toggle" id="mealFav25" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav25" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">Bunless Double ButterBurger + Wisconsin Cheddar Cheese Sauce</div>
+<div class="meal-full">Bunless Double ButterBurger + Wisconsin Cheddar Cheese Sauce</div>
+</div><input class="fav-toggle" id="mealFav26" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav26" title="Favorite meal">☆</label><span class="meal-label">Option 4</span></div>
+<div class="meal-name">Modified grilled chicken — only after current seasoning confirmation</div>
+<div class="meal-full">Modified grilled chicken — only after current seasoning confirmation</div>
+</div><input class="fav-toggle" id="mealFav27" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav27" title="Favorite meal">☆</label><span class="meal-label">Option 5</span></div>
+<div class="meal-name">Modified Garden Fresco Salad — omit unverified dressing/components</div>
+<div class="meal-full">Modified Garden Fresco Salad — omit unverified dressing/components</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Beef, cheeses, fries, steamed broccoli, plain mashed potatoes without gravy, and Wisconsin Cheddar Cheese Sauce had no onion/problematic fructose identified. Standard bun may contain HFCS; gluten-free bun had no HFCS/onion identified.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle6" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle6"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Federico’s Mexican Food</h2></div><label class="x" for="modalToggle6">×</label></div>
+<p class="overall">🟠 Limited ingredient transparency</p>
+<input class="fav-toggle" id="mealFav28" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav28" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Nutrition unavailable</span></div>
+<div class="meal-name">Steak-and-egg burrito — no pico, no salsa; ask staff to confirm steak seasoning has no onion/onion powder and no problematic fructose</div>
+<div class="meal-full">Steak-and-egg burrito — no pico, no salsa; ask staff to confirm steak seasoning has no onion/onion powder and no problematic fructose. Nutrition not reliably published.</div>
+</div><input class="fav-toggle" id="mealFav29" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav29" title="Favorite meal">☆</label><span class="meal-label">Option 2</span></div>
+<div class="meal-name">Country burrito — potato, egg, cheese only</div>
+<div class="meal-full">Country burrito — potato, egg, cheese only</div>
+</div><input class="fav-toggle" id="mealFav30" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav30" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">Carne-asada quesadilla — no salsa; confirm marinade/seasoning</div>
+<div class="meal-full">Carne-asada quesadilla — no salsa; confirm marinade/seasoning</div>
+</div><input class="fav-toggle" id="mealFav31" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav31" title="Favorite meal">☆</label><span class="meal-label">Option 4</span></div>
+<div class="meal-name">Pollo-asado taco — no onion/salsa; confirm marinade/seasoning</div>
+<div class="meal-full">Pollo-asado taco — no onion/salsa; confirm marinade/seasoning</div>
+</div><input class="fav-toggle" id="mealFav32" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav32" title="Favorite meal">☆</label><span class="meal-label">Option 5</span></div>
+<div class="meal-name">Plain cheese quesadilla</div>
+<div class="meal-full">Plain cheese quesadilla</div>
+</div>
+<input class="fav-toggle" id="mealFav102" type="checkbox"/><div class="meal"><div class="meal-top"><label class="star meal-star" for="mealFav102" title="Favorite meal">☆</label><span class="meal-label">Option 6</span><span class="macro">Nutrition unavailable</span></div><div class="meal-name">Chicken rolled tacos — 3 tacos with cheese</div><div class="meal-full">Order three rolled tacos with CHICKEN filling, cheese only; no salsa or guacamole unless ingredients confirmed. 🟠 Confirm the chicken filling contains no onion/onion powder, and no HFCS, honey or other excess-fructose ingredient. Chicken filling and frying oil are not fully documented. Nutrition unavailable.</div></div><input class="fav-toggle" id="mealFav103" type="checkbox"/><div class="meal"><div class="meal-top"><label class="star meal-star" for="mealFav103" title="Favorite meal">☆</label><span class="meal-label">Option 7</span><span class="macro">Nutrition unavailable</span></div><div class="meal-name">Chicken rolled taco combo — 4 tacos, beans and rice</div><div class="meal-full">Ask for combo #19 with CHICKEN rolled tacos; cheese/guacamole on the side. Request beans and rice separately. 🟠 Only eat beans and rice if staff confirms neither contains onion/onion powder in the cooking process or HFCS/honey/excess-fructose ingredients. Otherwise omit both sides. Nutrition unavailable.</div></div><details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Confirmed onion appears in shredded beef/machaca, fajitas, pico, and several specialty items. Incorporated onion cannot be fixed by simply removing visible onion. No reliable official calories/protein were found. Updated October 26, 2026: Official menu lists rolled tacos and #19 combo. Location menus indicate chicken or beef filling may be chosen. Chicken seasoning, refried beans, and seasoned rice recipes remain undisclosed; these are not verified onion-free or fructose-compatible. Verify separately before eating.</p></details>
+<div class="verified">Last reviewed October 26, 2026 · ingredient uncertainty remains</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle7" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle7"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Five Guys</h2></div><label class="x" for="modalToggle7">×</label></div>
+<p class="overall">🟢 Best bet with simple build</p>
+<input class="fav-toggle" id="mealFav33" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav33" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 375–390 cal · ~20 g protein</span></div>
+<div class="meal-name">Little Cheeseburger bowl or lettuce wrap — beef, cheese, lettuce, tomato, green peppers, jalapeños; hot sauce or mustard</div>
+<div class="meal-full">Little Cheeseburger bowl or lettuce wrap — beef, cheese, lettuce, tomato, green peppers, jalapeños; hot sauce or mustard. Estimated 375–390 cal | ~20 g protein.</div>
+</div><input class="fav-toggle" id="mealFav34" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav34" title="Favorite meal">☆</label><span class="meal-label">Option 2</span></div>
+<div class="meal-name">Little Hamburger bowl/lettuce wrap with safe vegetables</div>
+<div class="meal-full">Little Hamburger bowl/lettuce wrap with safe vegetables</div>
+</div><input class="fav-toggle" id="mealFav35" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav35" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">Regular fries as a side — potatoes, peanut oil, salt</div>
+<div class="meal-full">Regular fries as a side — potatoes, peanut oil, salt</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Beef and regular fries were the clearest ingredient-safe components. The highly customizable format makes it easier to avoid onion and sweet sauces. Grill/line cross-contact with onion remains possible.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle8" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle8"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Jack in the Box</h2></div><label class="x" for="modalToggle8">×</label></div>
+<p class="overall">🟡 Good with customization</p>
+<input class="fav-toggle" id="mealFav36" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav36" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 450–490 cal · ~26 g protein</span></div>
+<div class="meal-name">Jumbo Jack — no onions, no ketchup; mustard only</div>
+<div class="meal-full">Jumbo Jack — no onions, no ketchup; mustard only. Estimated 450–490 cal | ~26 g protein.</div>
+</div><input class="fav-toggle" id="mealFav37" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav37" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">Estimated 600–750 cal · 35–45 g protein</span></div>
+<div class="meal-name">Double beef burger — no onion/ketchup; Estimated 600–750 cal | 35–45 g protein</div>
+<div class="meal-full">Double beef burger — no onion/ketchup; Estimated 600–750 cal | 35–45 g protein</div>
+</div><input class="fav-toggle" id="mealFav38" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav38" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">Estimated 350–400 cal · 16–20 g protein</span></div>
+<div class="meal-name">Breakfast Jack — Estimated 350–400 cal | 16–20 g protein</div>
+<div class="meal-full">Breakfast Jack — Estimated 350–400 cal | 16–20 g protein</div>
+</div><input class="fav-toggle" id="mealFav39" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav39" title="Favorite meal">☆</label><span class="meal-label">Option 4</span><span class="macro">Estimated 450–550 cal · 18–25 g protein</span></div>
+<div class="meal-name">Simplified breakfast platter — Estimated 450–550 cal | 18–25 g protein</div>
+<div class="meal-full">Simplified breakfast platter — Estimated 450–550 cal | 18–25 g protein</div>
+</div><input class="fav-toggle" id="mealFav40" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav40" title="Favorite meal">☆</label><span class="meal-label">Option 5</span><span class="macro">Estimated 290–320 cal · ~14 g protein</span></div>
+<div class="meal-name">Jr</div>
+<div class="meal-full">Jr. Jack — no onion/ketchup; Estimated 290–320 cal | ~14 g protein</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Plain beef patties were documented as beef. Mustard/salt/pepper are the safest flavoring strategy. Taco/taco sauce contains onion; tartar contains onion + HFCS; Sweet ’N Sour and BBQ contain HFCS.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle9" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle9"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>KFC</h2></div><label class="x" for="modalToggle9">×</label></div>
+<p class="overall">🟠 Original Recipe seasoning remains proprietary</p>
+<input class="fav-toggle" id="mealFav41" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav41" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 400 cal · ~35 g protein</span></div>
+<div class="meal-name">3 Original Recipe Tenders + corn; no sauce</div>
+<div class="meal-full">3 Original Recipe Tenders + corn; no sauce. Estimated 400 cal | ~35 g protein.</div>
+</div><input class="fav-toggle" id="mealFav42" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav42" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">460 cal · ~41 g protein</span></div>
+<div class="meal-name">Original Recipe breast + corn — 460 cal | ~41 g protein</div>
+<div class="meal-full">Original Recipe breast + corn — 460 cal | ~41 g protein</div>
+</div><input class="fav-toggle" id="mealFav43" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav43" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">440 cal · ~35 g protein</span></div>
+<div class="meal-name">3 Original Recipe Tenders + mashed potatoes, no gravy — 440 cal | ~35 g protein</div>
+<div class="meal-full">3 Original Recipe Tenders + mashed potatoes, no gravy — 440 cal | ~35 g protein</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Extra Crispy chicken/tenders, fries, gravy, and coleslaw had documented onion. Original Recipe seasoning remains unknown because of proprietary “herbs and spices.” Unsauced items were generally favorable for fructose.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle10" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle10"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Mesquite Fresh Street Mex</h2></div><label class="x" for="modalToggle10">×</label></div>
+<p class="overall">🟠 Protein seasoning not disclosed</p>
+<input class="fav-toggle" id="mealFav44" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav44" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 350–500 cal · 30–40 g protein</span></div>
+<div class="meal-name">Custom chicken packed bowl — spring mix + chicken + cabbage + cheese + sour cream + grilled serrano + lime; omit rice, beans, fajita vegetables, pico, onions, pickled onions, guac, chipotle sauce, and all salsas</div>
+<div class="meal-full">Custom chicken packed bowl — spring mix + chicken + cabbage + cheese + sour cream + grilled serrano + lime; omit rice, beans, fajita vegetables, pico, onions, pickled onions, guac, chipotle sauce, and all salsas. Estimated 350–500 cal | 30–40 g protein.</div>
+</div><input class="fav-toggle" id="mealFav45" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav45" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">510 cal · 39 g protein</span></div>
+<div class="meal-name">Chicken corn tacos with the same omissions — baseline 3 tacos 510 cal | 39 g protein</div>
+<div class="meal-full">Chicken corn tacos with the same omissions — baseline 3 tacos 510 cal | 39 g protein</div>
+</div><input class="fav-toggle" id="mealFav46" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav46" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">Steak bowl/tacos only after seasoning confirmation</div>
+<div class="meal-full">Steak bowl/tacos only after seasoning confirmation</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>White/cilantro onions and pickled onions are confirmed unsafe; pico treated as unsafe. Chicken and steak seasoning remain unknown, so the protein itself is the main unresolved issue.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle11" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle11"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>MOD Pizza</h2></div><label class="x" for="modalToggle11">×</label></div>
+<p class="overall">🟢/🟡 Strong customizable options</p>
+<input class="fav-toggle" id="mealFav47" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav47" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated ~475 cal · ~35 g protein</span></div>
+<div class="meal-name">Small thin-crust Chicken Pesto Mini Pizza — pesto, mozzarella, double grilled chicken, mushrooms, roasted red peppers, spinach, basil</div>
+<div class="meal-full">Small thin-crust Chicken Pesto Mini Pizza — pesto, mozzarella, double grilled chicken, mushrooms, roasted red peppers, spinach, basil. Estimated ~475 cal | ~35 g protein.</div>
+</div><input class="fav-toggle" id="mealFav48" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav48" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">Estimated ~315 cal · ~29 g protein</span></div>
+<div class="meal-name">Double-chicken balsamic salad — Estimated ~315 cal | ~29 g protein</div>
+<div class="meal-full">Double-chicken balsamic salad — Estimated ~315 cal | ~29 g protein</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Official ingredient/allergen data was unusually useful. Pesto, garlic rub, balsamic vinaigrette, oil/vinegar, red-wine vinegar, and sriracha were the strongest sauce/finish choices.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle12" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle12"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Panda Express</h2></div><label class="x" for="modalToggle12">×</label></div>
+<p class="overall">🟠 Proprietary spices limit certainty</p>
+<input class="fav-toggle" id="mealFav49" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav49" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">275 cal · 33 g protein</span></div>
+<div class="meal-name">Grilled Teriyaki Chicken à la carte — 275 cal | 33 g protein</div>
+<div class="meal-full">Grilled Teriyaki Chicken à la carte — 275 cal | 33 g protein. Treat as 🟠 because proprietary spices prevent onion verification.</div>
+</div><input class="fav-toggle" id="mealFav50" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav50" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">795 cal · 43 g protein</span></div>
+<div class="meal-name">Grilled Teriyaki Chicken + steamed white rice — 795 cal | 43 g protein</div>
+<div class="meal-full">Grilled Teriyaki Chicken + steamed white rice — 795 cal | 43 g protein</div>
+</div><input class="fav-toggle" id="mealFav51" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav51" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">670 cal · 25 g protein</span></div>
+<div class="meal-name">Broccoli Beef + white rice — 670 cal | 25 g protein</div>
+<div class="meal-full">Broccoli Beef + white rice — 670 cal | 25 g protein</div>
+</div><input class="fav-toggle" id="mealFav52" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav52" title="Favorite meal">☆</label><span class="meal-label">Option 4</span><span class="macro">740 cal · 23 g protein</span></div>
+<div class="meal-name">Mushroom Chicken + white rice — 740 cal | 23 g protein</div>
+<div class="meal-full">Mushroom Chicken + white rice — 740 cal | 23 g protein</div>
+</div><input class="fav-toggle" id="mealFav53" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav53" title="Favorite meal">☆</label><span class="meal-label">Option 5</span><span class="macro">150 cal · 15 g protein</span></div>
+<div class="meal-name">Broccoli Beef à la carte — 150 cal | 15 g protein</div>
+<div class="meal-full">Broccoli Beef à la carte — 150 cal | 15 g protein</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Steamed white rice is the strongest verified safe component. Several entrées use proprietary “spices,” so onion cannot be ruled out.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle13" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle13"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Panera Bread</h2></div><label class="x" for="modalToggle13">×</label></div>
+<p class="overall">🟡 Good salad option; many sauces/soups fail</p>
+<input class="fav-toggle" id="mealFav54" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav54" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated ~540 cal · ~30 g protein</span></div>
+<div class="meal-name">Greek Salad with Chicken — no red onions; Greek dressing on side, use about half</div>
+<div class="meal-full">Greek Salad with Chicken — no red onions; Greek dressing on side, use about half. Estimated ~540 cal | ~30 g protein. Chicken formula remains uncertain.</div>
+</div><input class="fav-toggle" id="mealFav55" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav55" title="Favorite meal">☆</label><span class="meal-label">Option 2</span></div>
+<div class="meal-name">Chicken Caesar — no Caesar dressing; use Greek dressing; omit croutons if desired</div>
+<div class="meal-full">Chicken Caesar — no Caesar dressing; use Greek dressing; omit croutons if desired</div>
+</div><input class="fav-toggle" id="mealFav56" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav56" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">~420 cal · 20 g protein</span></div>
+<div class="meal-name">Half Turkey &amp; Cheddar on Country Rustic Sourdough — no onion — ~420 cal | 20 g protein</div>
+<div class="meal-full">Half Turkey &amp; Cheddar on Country Rustic Sourdough — no onion — ~420 cal | 20 g protein</div>
+</div><input class="fav-toggle" id="mealFav57" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav57" title="Favorite meal">☆</label><span class="meal-label">Option 4</span><span class="macro">190 cal · 6 g protein</span></div>
+<div class="meal-name">French baguette — 190 cal | 6 g protein</div>
+<div class="meal-full">French baguette — 190 cal | 6 g protein</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Greek dressing had no identified onion or problematic high-fructose ingredient. Caesar, Farmhouse Ranch, Green Goddess, Poppyseed, and Fuji/white apple vinaigrette were unsafe or poor fits due to onion and/or agave/apple concentrate. Chicken Noodle, Broccoli Cheddar, Creamy Tomato, and French Onion soups contain onion.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle14" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle14"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Popeyes</h2></div><label class="x" for="modalToggle14">×</label></div>
+<p class="overall">🟠 Very limited chicken option</p>
+<input class="fav-toggle" id="mealFav58" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav58" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">~670 cal · 46 g protein</span></div>
+<div class="meal-name">3-piece Spicy Tenders + regular Mac &amp; Cheese + Louisiana Hot Sauce</div>
+<div class="meal-full">3-piece Spicy Tenders + regular Mac &amp; Cheese + Louisiana Hot Sauce. ~670 cal | 46 g protein. Onion remains unknown because batter uses vague flavors/spices; no problematic fructose identified.</div>
+</div><input class="fav-toggle" id="mealFav59" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav59" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">390 cal · 35 g protein</span></div>
+<div class="meal-name">3-piece Spicy Tenders alone — 390 cal | 35 g protein</div>
+<div class="meal-full">3-piece Spicy Tenders alone — 390 cal | 35 g protein</div>
+</div><input class="fav-toggle" id="mealFav60" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav60" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">550 cal · 36 g protein</span></div>
+<div class="meal-name">Tenders + coleslaw — 550 cal | 36 g protein</div>
+<div class="meal-full">Tenders + coleslaw — 550 cal | 36 g protein</div>
+</div><input class="fav-toggle" id="mealFav61" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav61" title="Favorite meal">☆</label><span class="meal-label">Option 4</span><span class="macro">660 cal · 38 g protein</span></div>
+<div class="meal-name">Tenders + Cajun fries — 660 cal | 38 g protein</div>
+<div class="meal-full">Tenders + Cajun fries — 660 cal | 38 g protein</div>
+</div><input class="fav-toggle" id="mealFav62" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav62" title="Favorite meal">☆</label><span class="meal-label">Option 5</span><span class="macro">510 cal · 14 g protein</span></div>
+<div class="meal-name">Mac &amp; Cheese + biscuit — 510 cal | 14 g protein</div>
+<div class="meal-full">Mac &amp; Cheese + biscuit — 510 cal | 14 g protein</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Most Popeyes chicken—including bone-in, Classic/Blackened tenders, sandwiches, and wings—had documented onion/onion powder. The Spicy Tenders profile remained unresolved rather than clearly safe.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle15" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle15"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Potbelly</h2></div><label class="x" for="modalToggle15">×</label></div>
+<p class="overall">🟡 Sandwiches workable; supplier formulas incomplete</p>
+<input class="fav-toggle" id="mealFav63" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav63" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">~315 cal · ~28 g protein</span></div>
+<div class="meal-name">Skinny Turkey &amp; Swiss on multigrain or white — no mayo, onion, or hot peppers; add lettuce, tomato, cucumber, oil, red-wine vinegar</div>
+<div class="meal-full">Skinny Turkey &amp; Swiss on multigrain or white — no mayo, onion, or hot peppers; add lettuce, tomato, cucumber, oil, red-wine vinegar. ~315 cal | ~28 g protein.</div>
+</div><input class="fav-toggle" id="mealFav64" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav64" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">~335 cal · 33 g protein</span></div>
+<div class="meal-name">Skinny Grilled Chicken &amp; Cheddar — ~335 cal | 33 g protein</div>
+<div class="meal-full">Skinny Grilled Chicken &amp; Cheddar — ~335 cal | 33 g protein</div>
+</div><input class="fav-toggle" id="mealFav65" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav65" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">~340 cal · 27 g protein</span></div>
+<div class="meal-name">Smoked Ham &amp; Swiss — ~340 cal | 27 g protein</div>
+<div class="meal-full">Smoked Ham &amp; Swiss — ~340 cal | 27 g protein</div>
+</div><input class="fav-toggle" id="mealFav66" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav66" title="Favorite meal">☆</label><span class="meal-label">Option 4</span><span class="macro">~355 cal · 28 g protein</span></div>
+<div class="meal-name">Roast Beef &amp; Provolone — ~355 cal | 28 g protein</div>
+<div class="meal-full">Roast Beef &amp; Provolone — ~355 cal | 28 g protein</div>
+</div><input class="fav-toggle" id="mealFav67" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav67" title="Favorite meal">☆</label><span class="meal-label">Option 5</span></div>
+<div class="meal-name">Custom chicken salad-style build only with red onion/apples/cranberries/candied walnuts removed and dressing verified — 🟠</div>
+<div class="meal-full">Custom chicken salad-style build only with red onion/apples/cranberries/candied walnuts removed and dressing verified — 🟠</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Tuna/chicken salad, chili/chili mac, sliced/caramelized onion, and Cool Ranch Doritos were confirmed onion concerns. Shortbread cookie had HFCS; apple-based salads/toppings are poor fits.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle16" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle16"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Robeks Fresh Juices &amp; Smoothies</h2></div><label class="x" for="modalToggle16">×</label></div>
+<p class="overall">🟡 Few genuinely compatible smoothie choices</p>
+<input class="fav-toggle" id="mealFav68" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav68" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated ~250–320 cal · ~16+ g protein</span></div>
+<div class="meal-name">Customized Medium Super Green — remove/replace juice or frozen-yogurt components that contain problematic fruit/sweeteners; add whey</div>
+<div class="meal-full">Customized Medium Super Green — remove/replace juice or frozen-yogurt components that contain problematic fruit/sweeteners; add whey. Estimated ~250–320 cal | ~16+ g protein.</div>
+</div><input class="fav-toggle" id="mealFav69" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav69" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">510 cal · 15 g protein</span></div>
+<div class="meal-name">Avocado &amp; Egg Toast — no bacon bits unless onion-free — 510 cal | 15 g protein</div>
+<div class="meal-full">Avocado &amp; Egg Toast — no bacon bits unless onion-free — 510 cal | 15 g protein</div>
+</div><input class="fav-toggle" id="mealFav70" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav70" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">~430 cal · 7 g protein</span></div>
+<div class="meal-name">Classic Avocado Toast — ~430 cal | 7 g protein</div>
+<div class="meal-full">Classic Avocado Toast — ~430 cal | 7 g protein</div>
+</div><input class="fav-toggle" id="mealFav71" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav71" title="Favorite meal">☆</label><span class="meal-label">Option 4</span></div>
+<div class="meal-name">Modified Polar Pineapple + protein — only with problematic bases/sweeteners removed</div>
+<div class="meal-full">Modified Polar Pineapple + protein — only with problematic bases/sweeteners removed</div>
+</div><input class="fav-toggle" id="mealFav72" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav72" title="Favorite meal">☆</label><span class="meal-label">Option 5</span><span class="macro">16 cal · 0 g protein</span></div>
+<div class="meal-name">Lemon Ginger Cayenne shot — 16 cal | 0 g protein</div>
+<div class="meal-full">Lemon Ginger Cayenne shot — 16 cal | 0 g protein</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Fructose is the dominant issue. Apple juice, mango, agave, and honey recur across the menu and are poor fits. Simple smoothie/fruit components did not show onion, but processed foods/seasonings and proprietary boosts remain uncertain.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle17" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle17"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Shake Shack</h2></div><label class="x" for="modalToggle17">×</label></div>
+<p class="overall">🟢/🟡 Strong simple burger build</p>
+<input class="fav-toggle" id="mealFav73" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav73" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 385–390 cal · ~39 g protein</span></div>
+<div class="meal-name">Double hamburger, lettuce-wrapped — no onion, no sauce; lettuce + tomato</div>
+<div class="meal-full">Double hamburger, lettuce-wrapped — no onion, no sauce; lettuce + tomato. Estimated 385–390 cal | ~39 g protein.</div>
+</div><input class="fav-toggle" id="mealFav74" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav74" title="Favorite meal">☆</label><span class="meal-label">Option 2</span></div>
+<div class="meal-name">Single cheeseburger lettuce-wrapped — ~265 cal</div>
+<div class="meal-full">Single cheeseburger lettuce-wrapped — ~265 cal</div>
+</div><input class="fav-toggle" id="mealFav75" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav75" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">Double cheeseburger lettuce-wrapped — ~455 cal</div>
+<div class="meal-full">Double cheeseburger lettuce-wrapped — ~455 cal</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Angus beef, American cheese, lettuce wrap, lettuce, tomato, and avocado were the strongest simple components. Specialty sauces and chicken introduce much more uncertainty.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle18" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle18"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>T&amp;Y Hawaiian BBQ</h2></div><label class="x" for="modalToggle18">×</label></div>
+<p class="overall">🟠 Proceed with caution</p>
+<input class="fav-toggle" id="mealFav76" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav76" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Nutrition unavailable</span></div>
+<div class="meal-name">Kalua pork + white rice + double steamed cabbage/broccoli/carrots; substitute vegetables for macaroni salad; no sauce</div>
+<div class="meal-full">Kalua pork + white rice + double steamed cabbage/broccoli/carrots; substitute vegetables for macaroni salad; no sauce. Confirm pork contains no onion/onion powder or problematic fructose before ordering. Nutrition not published.</div>
+</div><input class="fav-toggle" id="mealFav77" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav77" title="Favorite meal">☆</label><span class="meal-label">Option 2</span></div>
+<div class="meal-name">Any verified plain protein + white rice + steamed vegetables</div>
+<div class="meal-full">Any verified plain protein + white rice + steamed vegetables</div>
+</div><input class="fav-toggle" id="mealFav78" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav78" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">Spam &amp; egg modified — only after processed-meat ingredient check</div>
+<div class="meal-full">Spam &amp; egg modified — only after processed-meat ingredient check</div>
+</div><input class="fav-toggle" id="mealFav79" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav79" title="Favorite meal">☆</label><span class="meal-label">Option 4</span></div>
+<div class="meal-name">Shrimp or egg fried rice — only after seasoning verification</div>
+<div class="meal-full">Shrimp or egg fried rice — only after seasoning verification</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>White rice and steamed vegetables were the clearest safe sides. Island Fire Chicken explicitly lists onion. Marinades and sauces are the major unresolved risk and may be incorporated before cooking.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle19" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle19"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Tacos Chilango</h2></div><label class="x" for="modalToggle19">×</label></div>
+<p class="overall">🟠 Proceed with caution</p>
+<input class="fav-toggle" id="mealFav80" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav80" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 450–550 cal · 30–40 g protein</span></div>
+<div class="meal-name">3 asada corn-tortilla tacos — no onion, no salsa; cilantro + lime</div>
+<div class="meal-full">3 asada corn-tortilla tacos — no onion, no salsa; cilantro + lime. Estimated 450–550 cal | 30–40 g protein. Confirm asada marinade/seasoning is onion-free before ordering.</div>
+</div><input class="fav-toggle" id="mealFav81" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav81" title="Favorite meal">☆</label><span class="meal-label">Option 2</span></div>
+<div class="meal-name">Grilled chicken tacos — no onion/salsa; verify seasoning</div>
+<div class="meal-full">Grilled chicken tacos — no onion/salsa; verify seasoning</div>
+</div><input class="fav-toggle" id="mealFav82" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav82" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">Carnitas tacos — no onion/salsa; verify seasoning</div>
+<div class="meal-full">Carnitas tacos — no onion/salsa; verify seasoning</div>
+</div><input class="fav-toggle" id="mealFav83" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav83" title="Favorite meal">☆</label><span class="meal-label">Option 4</span></div>
+<div class="meal-name">Asada queso — verify meat seasoning</div>
+<div class="meal-full">Asada queso — verify meat seasoning</div>
+</div><input class="fav-toggle" id="mealFav84" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav84" title="Favorite meal">☆</label><span class="meal-label">Option 5</span></div>
+<div class="meal-name">Plain cheese quesadilla</div>
+<div class="meal-full">Plain cheese quesadilla</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Removing diced onion does not verify the meat. Full recipes for meat marinades/seasonings, tortillas, rice, beans, guacamole, and salsas were not disclosed. No documented HFCS/fructose/honey/agave was found in the savory menu, but disclosure is insufficient.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle20" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle20"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Tacos El Flaco</h2></div><label class="x" for="modalToggle20">×</label></div>
+<p class="overall">🟠 Limited transparency</p>
+<input class="fav-toggle" id="mealFav85" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav85" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Nutrition unavailable</span></div>
+<div class="meal-name">5 bistec corn tacos — no grilled/fresh onion-cilantro mix; no salsa; ask whether bistec seasoning/marinade contains onion/onion powder</div>
+<div class="meal-full">5 bistec corn tacos — no grilled/fresh onion-cilantro mix; no salsa; ask whether bistec seasoning/marinade contains onion/onion powder. Nutrition not available.</div>
+</div><input class="fav-toggle" id="mealFav86" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav86" title="Favorite meal">☆</label><span class="meal-label">Option 2</span></div>
+<div class="meal-name">Other plain corn-tortilla meat tacos only after marinade/seasoning verification</div>
+<div class="meal-full">Other plain corn-tortilla meat tacos only after marinade/seasoning verification</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Onion toppings, charro/special beans, and pico were confirmed concerns. Steak seasoning and other core recipes remain undisclosed.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle21" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle21"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Tropical Smoothie Cafe</h2></div><label class="x" for="modalToggle21">×</label></div>
+<p class="overall">🟡 Food options better than most smoothies</p>
+<input class="fav-toggle" id="mealFav87" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav87" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">360 cal · 23 g protein</span></div>
+<div class="meal-name">Turkey &amp; Cheddar Kids Wrap</div>
+<div class="meal-full">Turkey &amp; Cheddar Kids Wrap. 360 cal | 23 g protein. Ingredient formulas for turkey/tortilla remain partially uncertain.</div>
+</div><input class="fav-toggle" id="mealFav88" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav88" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">480 cal · 29 g protein</span></div>
+<div class="meal-name">Chicken Cheese ’Dilla — no salsa — 480 cal | 29 g protein</div>
+<div class="meal-full">Chicken Cheese ’Dilla — no salsa — 480 cal | 29 g protein</div>
+</div><input class="fav-toggle" id="mealFav89" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav89" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">540 cal · 31 g protein</span></div>
+<div class="meal-name">Three Cheese Chicken ’Dilla — no salsa — 540 cal | 31 g protein</div>
+<div class="meal-full">Three Cheese Chicken ’Dilla — no salsa — 540 cal | 31 g protein</div>
+</div><input class="fav-toggle" id="mealFav90" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav90" title="Favorite meal">☆</label><span class="meal-label">Option 4</span><span class="macro">410 cal · 17 g protein</span></div>
+<div class="meal-name">All American Bacon Wrap — 410 cal | 17 g protein</div>
+<div class="meal-full">All American Bacon Wrap — 410 cal | 17 g protein</div>
+</div><input class="fav-toggle" id="mealFav91" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav91" title="Favorite meal">☆</label><span class="meal-label">Option 5</span></div>
+<div class="meal-name">Jetty Punch — no added sugar + whey; standard 360 cal/2 g + whey 100 cal/16 g; modified total unpublished</div>
+<div class="meal-full">Jetty Punch — no added sugar + whey; standard 360 cal/2 g + whey 100 cal/16 g; modified total unpublished</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Mango, watermelon, apple, honey, and large fruit-based smoothies are poor fits for fructose malabsorption. Santa Fe ’Dilla contains roasted onion; Hummus Veggie contains pickled red onions.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div><input class="modal-toggle" id="modalToggle22" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle22"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Wendy’s</h2></div><label class="x" for="modalToggle22">×</label></div>
+<p class="overall">🟢/🟡 Strong customized beef option</p>
+<input class="fav-toggle" id="mealFav92" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav92" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated 390–420 cal · 25–27 g protein</span></div>
+<div class="meal-name">Dave’s Single — no bun / lettuce wrapped; no onion; no ketchup; keep cheese, mayo, lettuce, tomato; no pickles</div>
+<div class="meal-full">Dave’s Single — no bun / lettuce wrapped; no onion; no ketchup; keep cheese, mayo, lettuce, tomato; no pickles. Estimated 390–420 cal | 25–27 g protein.</div>
+</div><input class="fav-toggle" id="mealFav93" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav93" title="Favorite meal">☆</label><span class="meal-label">Option 2</span></div>
+<div class="meal-name">Dave’s Double lettuce-wrapped, no onion/ketchup</div>
+<div class="meal-full">Dave’s Double lettuce-wrapped, no onion/ketchup</div>
+</div><input class="fav-toggle" id="mealFav94" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav94" title="Favorite meal">☆</label><span class="meal-label">Option 3</span></div>
+<div class="meal-name">Bacon cheeseburger lettuce wrap, no onion/ketchup</div>
+<div class="meal-full">Bacon cheeseburger lettuce wrap, no onion/ketchup</div>
+</div><input class="fav-toggle" id="mealFav95" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav95" title="Favorite meal">☆</label><span class="meal-label">Option 4</span></div>
+<div class="meal-name">Sour Cream &amp; Chive Baked Potato</div>
+<div class="meal-full">Sour Cream &amp; Chive Baked Potato</div>
+</div><input class="fav-toggle" id="mealFav96" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav96" title="Favorite meal">☆</label><span class="meal-label">Option 5</span></div>
+<div class="meal-name">Bacon-Egg-Cheese Biscuit without breakfast potatoes — biscuit remains 🟡</div>
+<div class="meal-full">Bacon-Egg-Cheese Biscuit without breakfast potatoes — biscuit remains 🟡</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Beef, mayo, mustard, American cheese, bacon, and plain/sour-cream-chive potatoes were the strongest components. Buns and ketchup contain HFCS; ketchup also contains onion. Chicken, chili, cheese sauces, breakfast potatoes, and ranch contain onion or are otherwise poor fits.</p></details>
+<div class="verified">Last verified September 19, 2026</div>
+</div>
+</div>
+<input class="modal-toggle" id="modalToggle23" type="checkbox"/>
+<div class="modal">
+<label aria-label="Close" class="scrim" for="modalToggle23"></label>
+<div class="sheet">
+<div class="sheet-head"><div><div class="kicker">Meal Options</div><h2>Bobby-Q BBQ Restaurant</h2></div><label class="x" for="modalToggle23">×</label></div>
+<p class="overall">🟡/🟠 Workable with deliberate customization; smoked-meat rubs remain unverified</p>
+<input class="fav-toggle" id="mealFav97" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav97" title="Favorite meal">☆</label><span class="meal-label">Best Pick</span><span class="macro">Estimated ~600–750 cal · ~60–70 g protein</span></div>
+<div class="meal-name">Plain/unseasoned 10 oz Wood-Fired Top Sirloin + steamed broccoli + plain baked potato</div>
+<div class="meal-full">No steak seasoning, rub, marinade, sauce, butter/topper, or cornbread. Estimated ~600–750 cal | ~60–70 g protein.</div>
+</div>
+<input class="fav-toggle" id="mealFav98" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav98" title="Favorite meal">☆</label><span class="meal-label">Option 2</span><span class="macro">Estimated ~550–700 cal · ~50–55 g protein</span></div>
+<div class="meal-name">Plain/unseasoned 8 oz filet mignon + steamed broccoli + plain baked potato</div>
+<div class="meal-full">Order completely plain. Estimated ~550–700 cal | ~50–55 g protein.</div>
+</div>
+<input class="fav-toggle" id="mealFav99" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav99" title="Favorite meal">☆</label><span class="meal-label">Option 3</span><span class="macro">Estimated ~900–1,100 cal · ~75–90 g protein</span></div>
+<div class="meal-name">Plain/unseasoned 14 oz ribeye + steamed broccoli + plain baked potato</div>
+<div class="meal-full">Order completely plain. Estimated ~900–1,100 cal | ~75–90 g protein.</div>
+</div>
+<input class="fav-toggle" id="mealFav100" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav100" title="Favorite meal">☆</label><span class="meal-label">Option 4</span></div>
+<div class="meal-name">Brisket or pulled pork, no BBQ sauce</div>
+<div class="meal-full">ONLY after staff confirms the pre-smoking rub contains no onion/onion powder and no problematic fructose ingredients.</div>
+</div>
+<input class="fav-toggle" id="mealFav101" type="checkbox"/><div class="meal">
+<div class="meal-top"><label class="star meal-star" for="mealFav101" title="Favorite meal">☆</label><span class="meal-label">Option 5</span></div>
+<div class="meal-name">Yardbird rotisserie half chicken, no sauce</div>
+<div class="meal-full">ONLY after seasoning is confirmed free of onion/onion powder and problematic fructose ingredients.</div>
+</div>
+<details class="findings"><summary>Ingredient &amp; safety notes</summary><p>Bobby-Q does not publish complete formulas for its BBQ rub, steak seasoning, sauces, marinades, dressings, or house-made sides. Wood-fired steaks are the strongest candidates because they can potentially be cooked completely unseasoned. Smoked-meat rubs remain unverified.</p></details>
+<div class="verified">Last verified October 3, 2026</div>
+</div>
+</div>
+<input class="modal-toggle" id="tacoToggle" type="checkbox"/><div class="modal"><label class="scrim" for="tacoToggle"></label><div class="sheet"><div class="sheet-head"><div><div class="kicker">Favorite</div><h2>Taco Bell</h2></div><label class="x" for="tacoToggle">×</label></div><div class="pending">Taco Bell is now on your restaurant list. Its ingredient-verified safe-order profile is pending research; do not treat any menu item as confirmed safe yet.</div></div></div>
+<script>
+(function () {
+  const page = document.getElementById('restaurantsPage');
+  if (!page) return;
+
+  const search = document.getElementById('restaurantSearch');
+  const cards = Array.from(page.querySelectorAll('.restaurant-card'));
+  const radios = {
+    all: document.getElementById('filterAll'),
+    best: document.getElementById('filterBest'),
+    protein: document.getElementById('filterProtein'),
+    calorie: document.getElementById('filterCalorie'),
+    certain: document.getElementById('filterCertain')
+  };
+
+  function activeFilter() {
+    if (radios.best && radios.best.checked) return 'filter-best';
+    if (radios.protein && radios.protein.checked) return 'filter-protein';
+    if (radios.calorie && radios.calorie.checked) return 'filter-calorie';
+    if (radios.certain && radios.certain.checked) return 'filter-certain';
+    return 'all';
+  }
+
+  function applyFilters() {
+    const filter = activeFilter();
+    const query = (search ? search.value : '').trim().toLowerCase();
+
+    cards.forEach(card => {
+      const name = (card.querySelector('.tile-name')?.textContent || '').toLowerCase();
+      const matchesSearch = !query || name.includes(query);
+      const matchesFilter = filter === 'all' || card.classList.contains(filter);
+      card.style.setProperty('display', (matchesSearch && matchesFilter) ? 'block' : 'none', 'important');
+    });
+  }
+
+  Object.values(radios).forEach(radio => {
+    if (radio) radio.addEventListener('change', applyFilters);
+  });
+  if (search) {
+    search.addEventListener('input', applyFilters);
+    search.addEventListener('search', applyFilters);
+  }
+
+  const clearButton = document.getElementById('restaurantSearchClear');
+  if (clearButton && search) {
+    clearButton.addEventListener('click', function () {
+      search.value = '';
+      applyFilters();
+      search.focus();
+    });
+  }
+
+  applyFilters();
+})();
+</script>
+<style>
+.manage-restaurants-btn{margin:12px 0 18px;border:1.5px solid #e6d9dc;background:#fff;color:#315744;border-radius:999px;padding:10px 16px;font-weight:800;font-size:14px;cursor:pointer}
+.manage-panel{display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,.28);align-items:flex-end;justify-content:center}
+.manage-panel.open{display:flex}
+.manage-sheet{background:#fff;width:min(100%,760px);max-height:82vh;border-radius:28px 28px 0 0;padding:24px 22px 34px;overflow:auto}
+.manage-head{display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:-24px;background:#fff;padding:18px 0 12px;z-index:2}
+.manage-head h2{margin:0;font-size:30px}.manage-close{border:0;background:#f4f6f2;border-radius:50%;width:44px;height:44px;font-size:28px;color:#315744}
+.manage-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid #eee}
+.manage-row-name{font-weight:800}.manage-remove{border:1px solid #e5cfd4;background:#fff;color:#b55f6c;border-radius:999px;padding:8px 12px;font-weight:800}
+.add-box{border:1px solid #e7dadd;border-radius:18px;padding:16px;margin:12px 0 18px;background:#fff}
+.add-box h3{margin:0 0 12px}.add-box input,.add-box select{box-sizing:border-box;width:100%;border:1px solid #d8d8d8;border-radius:12px;padding:12px;margin:6px 0;color:#111;background:#fff;font-size:16px}
+.add-confirm{width:100%;margin-top:8px;border:0;border-radius:12px;background:#315744;color:#fff;padding:12px;font-weight:800}
+.user-added-card .tile-sub{margin-top:10px}
+</style>
+<div aria-hidden="true" class="manage-panel" id="restaurantManager">
+<div class="manage-sheet">
+<div class="manage-head"><h2>Manage restaurants</h2><button aria-label="Close" class="manage-close" type="button">×</button></div>
+<div class="add-box">
+<h3>Add a restaurant</h3>
+<input id="newRestaurantName" placeholder="Restaurant name" type="text"/>
+<select id="newRestaurantCategory">
+<option value="category-quick">Quick Service / Fast Food</option>
+<option value="category-sit">Sit-Down / Casual Dining</option>
+<option value="category-specialty">Specialty / Café / Fast-Casual</option>
+</select>
+<button class="add-confirm" id="addRestaurantConfirm" type="button">Add restaurant</button>
+</div>
+<div id="restaurantManageList"></div>
+</div>
+</div>
+<script>
+(function(){
+ const STORAGE_ADDED='rso_added_restaurants_v1', STORAGE_REMOVED='rso_removed_restaurants_v1';
+ const q=s=>document.querySelector(s), qa=s=>Array.from(document.querySelectorAll(s));
+ function get(k){try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return []}}
+ function put(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){/* Preview blocks storage; keep current session usable. */}}
+ function cards(){return qa('.restaurant-card')}
+ function nameOf(card){const n=card.querySelector('.tile-name');return n?n.textContent.trim():''}
+ function grid(){
+   const c=cards()[0]; return c ? c.parentElement : null;
+ }
+ function applyRemoved(){
+   const removed=new Set(get(STORAGE_REMOVED));
+   cards().forEach(c=>{ if(removed.has(nameOf(c))) c.style.display='none'; });
+ }
+ function addCard(rec){
+   if(cards().some(c=>nameOf(c).toLowerCase()===rec.name.toLowerCase())) return;
+   const g=grid(); if(!g)return;
+   const el=document.createElement('label');
+   el.className='restaurant-card '+rec.category+' user-added-card';
+   el.dataset.userAdded='1';
+   el.innerHTML='<div class="tile-name"></div><div class="tile-sub">Research pending</div><div class="pending-actions"><button type="button" class="research-action">Research in ChatGPT</button></div>';
+   el.querySelector('.tile-name').textContent=rec.name;
+   const researchBtn=el.querySelector('.research-action'); if(researchBtn) researchBtn.dataset.restaurant=rec.name;
+   g.appendChild(el);
+ }
+ function restoreAdded(){get(STORAGE_ADDED).forEach(addCard)}
+ function renderManager(){
+   const host=q('#restaurantManageList'); if(!host)return;
+   host.innerHTML='';
+   const removed=new Set(get(STORAGE_REMOVED));
+   cards().forEach(c=>{
+     const name=nameOf(c); if(!name)return;
+     const row=document.createElement('div'); row.className='manage-row';
+     row.innerHTML='<span class="manage-row-name"></span><button class="manage-remove" type="button"></button>';
+     row.querySelector('.manage-row-name').textContent=name;
+     const b=row.querySelector('button');
+     const hidden=removed.has(name);
+     b.textContent=hidden?'Restore':'Remove';
+     b.onclick=()=>{
+       let r=get(STORAGE_REMOVED);
+       if(hidden) r=r.filter(x=>x!==name); else if(!r.includes(name)) r.push(name);
+       put(STORAGE_REMOVED,r);
+       c.style.display=hidden?'':'none';
+       renderManager();
+     };
+     host.appendChild(row);
+   });
+ }
+ function openManager(){renderManager();q('#restaurantManager').classList.add('open')}
+ function closeManager(){q('#restaurantManager').classList.remove('open')}
+ function installButton(){
+   const search=q('input[type="search"], input[placeholder*="Search"]');
+   if(!search)return;
+   const btn=document.createElement('button'); btn.type='button'; btn.className='manage-restaurants-btn'; btn.textContent='＋ Add restaurant';
+   const filters=search.parentElement.nextElementSibling;
+   if(filters && filters.parentElement) filters.parentElement.insertBefore(btn,filters.nextSibling);
+   else search.insertAdjacentElement('afterend',btn);
+   btn.onclick=openManager;
+ }
+ document.addEventListener('DOMContentLoaded',()=>{
+   restoreAdded(); applyRemoved(); installButton();
+   q('.manage-close').onclick=closeManager;
+   q('#restaurantManager').addEventListener('click',e=>{if(e.target.id==='restaurantManager')closeManager()});
+   q('#addRestaurantConfirm').onclick=()=>{
+     const inp=q('#newRestaurantName'), sel=q('#newRestaurantCategory');
+     const name=inp.value.trim(); if(!name)return;
+     let a=get(STORAGE_ADDED);
+     if(!a.some(x=>x.name.toLowerCase()===name.toLowerCase())){a.push({name,category:sel.value});put(STORAGE_ADDED,a);addCard({name,category:sel.value});}
+     let r=get(STORAGE_REMOVED).filter(x=>x.toLowerCase()!==name.toLowerCase());put(STORAGE_REMOVED,r);
+     inp.value=''; renderManager(); closeManager(); const research=[...document.querySelectorAll('.research-action')].find(b=>b.dataset.restaurant===name); if(research)research.click();
+   };
+ });
+})();
+</script>
+<div class="research-panel" id="researchPanel">
+<div class="research-sheet">
+<div class="research-sheet-head"><h2>Research restaurant</h2><button class="research-close" type="button">×</button></div>
+<p class="import-note">Copy this standardized request into this Restaurant Safe Order ChatGPT Project. Replace the restaurant name automatically from the card you selected.</p>
+<div class="research-prompt" id="researchPromptText"></div>
+<button class="copy-prompt" id="copyResearchPrompt" type="button">Copy research prompt</button>
+<h3>Import completed profile</h3>
+<p class="import-note">Paste the completed structured profile here. This prototype stores the imported profile locally; the Project knowledge-base document remains the durable source of truth.</p>
+<textarea class="import-area" id="profileImportText" placeholder="Paste completed Restaurant Safe Order Profile…"></textarea>
+<button class="copy-prompt" id="saveImportedProfile" type="button">Save imported profile</button>
+</div>
+</div>
+<script>
+(function(){
+ const MASTER_RESEARCH_PROMPT="Research [RESTAURANT NAME] for my Restaurant Safe Order knowledge base.\n\nUse current official restaurant ingredient, nutrition, allergen, and menu information whenever available. Use reputable secondary sources only when official information does not answer the question.\n\nMy permanent dietary requirements:\n1. NO ONION. Avoid onion, yellow/white/red/sweet onion, onion powder, dehydrated/dried onion, onion flakes, onion extract, onion juice, and onion-containing seasoning blends. Green onion/scallions are okay. Do not assume removing visible onion makes an item safe. Investigate seasonings, sauces, marinades, dressings, breading, soups/broths, salsa, condiments, flavored rice, spice blends, and other incorporated components. If ingredients are vague (such as \u201cspices,\u201d \u201cseasoning,\u201d or \u201cnatural flavors\u201d), mark onion status as uncertain rather than claiming it is onion-free.\n\n2. FRUCTOSE MALABSORPTION. Avoid high-fructose corn syrup (HFCS), fructose, crystalline fructose, agave/agave nectar, honey, concentrated high-fructose fruit juices, apple/apple juice/apple concentrate/applesauce, pear/pear concentrate, mango, watermelon, and other meaningful sources of excess fructose. Evaluate fruit by its actual fructose profile and likely serving amount. Table sugar/sucrose, glucose, dextrose, and regular corn syrup are not automatically prohibited.\n\n3. FRUCTOSE IS NOT THE SAME AS FRUCTANS. Do not apply a generic low-FODMAP diet. My primary concerns are excess fructose/fructose malabsorption and onion. Green onion/scallions are tolerated.\n\nAfter dietary compatibility, prioritize:\n- High protein\n- Lower calories\n- Strong protein-to-calorie ratio\n- Filling meals\n- Reasonable portions\n- Food that still tastes good\n\nInvestigate individual components whenever possible, especially protein seasoning, bread/buns/tortillas, sauces, dressings, marinades, breading, cheese, rice, beans, soups, salsa, condiments, toppings, sides, smoothie bases, juices, sweeteners, and seasoning blends.\n\nUse these classifications:\n\ud83d\udfe2 Best Bet \u2014 no problematic ingredients identified from available information.\n\ud83d\udfe1 Likely Safe With Modification \u2014 a straightforward modification makes the item appropriate, or minor uncertainty exists.\n\ud83d\udfe0 Proceed With Caution \u2014 meaningful ingredient uncertainty exists; explain exactly what cannot be verified.\n\ud83d\udd34 Avoid \u2014 confirmed onion or problematic high-fructose ingredient that cannot reasonably be removed.\n\nCreate a complete Restaurant Safe Order Profile with up to 5 genuinely useful orders. Do not include unsafe choices just to reach five.\n\nFor each usable order include:\n- Menu item\n- Safety classification\n- Exact order/modifications\n- Calories\n- Protein\n- Why it works\n- Watch out for / uncertainties\n\nIf modifications make exact nutrition unavailable, provide a reasonable estimate and label it Estimated. Never invent precise nutrition information.\n\nAlso include:\n- Restaurant\n- Last verified date\n- Primary safe order\n- Backup orders\n- Onion status\n- Fructose status\n- Safe sauces/dressings\n- Unsafe sauces/dressings\n- Safe sides\n- Ingredients/items to avoid\n- Unverified ingredients\n- Important ordering notes\n- Sources used\n\nFinish with:\n\ud83e\udd47 Best Pick\n\ud83d\udcf1 Easy Order\n\nReturn the completed profile in a structured format suitable for importing into the Restaurant Safe Order web app.";
+ let activeResearchRestaurant='';
+ function openResearch(name){
+   activeResearchRestaurant=name;
+   const p=MASTER_RESEARCH_PROMPT.replaceAll('[RESTAURANT NAME]',name);
+   document.getElementById('researchPromptText').textContent=p;
+   document.getElementById('profileImportText').value='';
+   document.getElementById('researchPanel').classList.add('open');
+ }
+ function closeResearch(){document.getElementById('researchPanel').classList.remove('open')}
+ document.addEventListener('click',function(e){
+   const r=e.target.closest('.research-action');
+   if(r){e.preventDefault();e.stopPropagation();openResearch(r.dataset.restaurant);}
+ });
+ document.addEventListener('DOMContentLoaded',function(){
+   const panel=document.getElementById('researchPanel');
+   panel.querySelector('.research-close').onclick=closeResearch;
+   panel.addEventListener('click',e=>{if(e.target===panel)closeResearch()});
+   document.getElementById('copyResearchPrompt').onclick=async function(){
+     const btn=this;
+     const text=document.getElementById('researchPromptText').textContent;
+     let copied=false;
+     if(navigator.clipboard && window.isSecureContext){
+       try{ await navigator.clipboard.writeText(text); copied=true; }catch(e){}
+     }
+     if(!copied){
+       const ta=document.createElement('textarea');
+       ta.value=text;
+       ta.setAttribute('readonly','');
+       ta.style.position='fixed';
+       ta.style.left='-9999px';
+       ta.style.top='0';
+       document.body.appendChild(ta);
+       ta.focus();
+       ta.select();
+       ta.setSelectionRange(0,ta.value.length);
+       try{ copied=document.execCommand('copy'); }catch(e){}
+       document.body.removeChild(ta);
+     }
+     if(copied){
+       btn.textContent='✓ Prompt copied';
+       setTimeout(()=>btn.textContent='Copy research prompt',1400);
+     }else{
+       const box=document.getElementById('researchPromptText');
+       const range=document.createRange();
+       range.selectNodeContents(box);
+       const sel=window.getSelection();
+       sel.removeAllRanges();
+       sel.addRange(range);
+       btn.textContent='Prompt selected — tap & hold to copy';
+       setTimeout(()=>btn.textContent='Copy research prompt',2200);
+     }
+   };
+   document.getElementById('saveImportedProfile').onclick=function(){
+     const value=document.getElementById('profileImportText').value.trim();
+     if(!value)return;
+     const key='rso_imported_profiles_v1';
+     let profiles={}; try{profiles=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
+     profiles[activeResearchRestaurant]={profile:value,importedAt:new Date().toISOString()};
+     try{localStorage.setItem(key,JSON.stringify(profiles))}catch(e){/* Storage unavailable in preview. */}
+     document.querySelectorAll('.user-added-card').forEach(card=>{
+       const n=card.querySelector('.tile-name');
+       if(n && n.textContent.trim()===activeResearchRestaurant){
+         const sub=card.querySelector('.tile-sub'); if(sub)sub.textContent='Profile imported';
+         const actions=card.querySelector('.pending-actions'); if(actions)actions.innerHTML='<span class="card-badge">Profile Imported</span>';
+       }
+     });
+     closeResearch();
+   };
+ });
+ window.RSO_MASTER_RESEARCH_PROMPT=MASTER_RESEARCH_PROMPT;
+})();
+</script>
+</body></html>
+<style>
+/* v13 favorite control sizing */
+.star{width:27px;height:27px;font-size:18px}
+.restaurant-star{right:10px;top:10px}
+.meal-star{right:-2px;top:-2px;font-size:17px}
+.fav-toggle:checked + .meal .meal-star::before{font-size:16px}
+.fav-toggle:checked + .tile .restaurant-star::before{font-size:16px}
+</style>
+<style>
+/* v15: favorites are menu-item only */
+.restaurant-star{display:none!important}
+</style>
